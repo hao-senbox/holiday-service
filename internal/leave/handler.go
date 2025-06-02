@@ -159,5 +159,22 @@ func (h *LeaveHandler) DeleteRequestLeave(c *gin.Context) {
 }
 
 func (h *LeaveHandler) UpdateRequestLeave(c *gin.Context) {
-	
+
+	id := c.Param("id")
+
+	var req UpdateRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.SendError(c, http.StatusBadRequest, err, helper.ErrInvalidRequest)
+		return
+	}
+
+	err := h.leaveService.UpdateRequestLeave(c, &req, id)
+	if err != nil {
+		helper.SendError(c, http.StatusBadRequest, err, helper.ErrInvalidRequest)
+		return
+	}
+
+	helper.SendSuccess(c, http.StatusOK, "Success", nil)
+
 }

@@ -18,7 +18,8 @@ type LeaveService interface {
 	GetMyRequest(ctx context.Context, userID string) (map[string][]*LeaveRequests, error)
 	EditMaxSlot(ctx context.Context, req *EditSlotRequest, id string) error
 	GetPendingRequest(ctx context.Context) ([]*LeaveRequests, error)
-	DeleteRequestLeave(ctx context.Context, req *DeleteLeaveRequest) error	
+	DeleteRequestLeave(ctx context.Context, req *DeleteLeaveRequest) error
+	UpdateRequestLeave(ctx context.Context, req *UpdateRequest, id string) error	
 }
 
 type leaveService struct {
@@ -211,5 +212,20 @@ func (s *leaveService) DeleteRequestLeave(ctx context.Context, req *DeleteLeaveR
 	}
 
 	return s.leaveRepository.DeleteRequestLeave(ctx, &dateParse, req.UserID)
+
+}
+
+func (s *leaveService) UpdateRequestLeave(ctx context.Context, req *UpdateRequest, id string) error {
+
+	if req.Types == "" {
+		return fmt.Errorf("types is required")
+	}
+
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	return s.leaveRepository.UpdateRequestLeave(ctx, req.Types, objectID)
 
 }

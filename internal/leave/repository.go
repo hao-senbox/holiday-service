@@ -20,6 +20,7 @@ type LeaveRepository interface {
 	EditMaxSlot(ctx context.Context, maxSlot int, availableSlot int, id primitive.ObjectID) error
 	GetPendingRequest(ctx context.Context) ([]*LeaveRequests, error)
 	DeleteRequestLeave(ctx context.Context, date *time.Time, userID string) error
+	UpdateRequestLeave(ctx context.Context, types string, id primitive.ObjectID) error
 }
 
 type leaveRepository struct {
@@ -372,4 +373,18 @@ func (r *leaveRepository) DeleteRequestLeave(ctx context.Context, date *time.Tim
 
 	return nil
 
+}
+
+func (r *leaveRepository) UpdateRequestLeave(ctx context.Context, types string, id primitive.ObjectID) error {
+
+	filter := bson.M{"_id": id, "request_type": "wishlist"}
+	update := bson.M{"$set": bson.M{"status": types}}
+
+	_, err := r.collectionLeave.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+	
 }
