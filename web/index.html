@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Management Calendar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .calendar-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .calendar-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .month-year {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .prev-btn {
+            left: 20px;
+        }
+
+        .next-btn {
+            right: 20px;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .weekday {
+            padding: 15px 10px;
+            text-align: center;
+            font-weight: bold;
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #e9ecef;
+        }
+
+        .calendar-day {
+            background: white;
+            min-height: 120px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            border: 2px solid transparent;
+        }
+
+        .calendar-day:hover {
+            background: #f8f9fa;
+            transform: scale(1.02);
+            border-color: #4facfe;
+        }
+
+        .calendar-day.other-month {
+            background: #f8f9fa;
+            color: #adb5bd;
+        }
+
+        .calendar-day.today {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .calendar-day.selected {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .day-number {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .day-stats {
+            font-size: 11px;
+            line-height: 1.2;
+        }
+
+        .stat-line {
+            display: flex;
+            align-items: center;
+            margin: 2px 0;
+        }
+
+        .stat-icon {
+            width: 12px;
+            height: 12px;
+            margin-right: 4px;
+            border-radius: 2px;
+            display: inline-block;
+        }
+
+        .available {
+            background: #28a745;
+        }
+
+        .confirmed {
+            background: #17a2b8;
+        }
+
+        .pending {
+            background: #ffc107;
+        }
+
+        .wishlist {
+            background: #dc3545;
+        }
+
+        .stat-text {
+            font-weight: 500;
+        }
+
+        .past-day {
+            background: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .past-day:hover {
+            transform: none;
+            border-color: transparent;
+        }
+
+        .no-advance-booking {
+            background: #fff3cd;
+            border-color: #856404;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #adb5bd;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border: 1px solid #b6d4da;
+            color: #0c5460;
+        }
+
+        .day-detail {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .detail-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4facfe;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .user-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            margin-bottom: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .welcome-text {
+            font-size: 16px;
+        }
+
+        .user-name {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        @media (max-width: 768px) {
+            .calendar-day {
+                min-height: 90px;
+                padding: 5px;
+            }
+            
+            .day-stats {
+                font-size: 10px;
+            }
+            
+            .modal-content {
+                margin: 5% auto;
+                padding: 20px;
+            }
+            
+            .detail-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calendar-container">
+        <div class="user-info">
+            <div>
+                <div class="welcome-text">Xin chào,</div>
+                <div class="user-name" id="userName">Nguyễn Văn A</div>
+            </div>
+        </div>
+        
+        <div class="calendar-header">
+            <button class="nav-btn prev-btn" onclick="previousMonth()">‹</button>
+            <div class="month-year" id="monthYear"></div>
+            <button class="nav-btn next-btn" onclick="nextMonth()">›</button>
+        </div>
+        
+        <div class="weekdays">
+            <div class="weekday">T2</div>
+            <div class="weekday">T3</div>
+            <div class="weekday">T4</div>
+            <div class="weekday">T5</div>
+            <div class="weekday">T6</div>
+            <div class="weekday">T7</div>
+            <div class="weekday">CN</div>
+        </div>
+        
+        <div class="calendar-grid" id="calendarGrid">
+            <div class="loading">
+                <div class="spinner"></div>
+                Đang tải dữ liệu...
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Leave Request -->
+    <div id="leaveModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h2 class="modal-title">Đăng ký nghỉ phép</h2>
+            </div>
+            
+            <div id="dayDetail" class="day-detail"></div>
+            
+            <div id="alertContainer"></div>
+            
+            <form id="leaveForm">
+                <div class="form-group">
+                    <label class="form-label">Ngày nghỉ:</label>
+                    <input type="text" id="selectedDate" class="form-control" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Lý do nghỉ:</label>
+                    <textarea id="reason" class="form-control" rows="3" placeholder="Nhập lý do xin nghỉ..." required></textarea>
+                </div>
+                
+                <div style="text-align: right;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Hủy</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Gửi yêu cầu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Mock data - thay thế bằng API calls thực tế
+        const API_BASE_URL = '/api/v1/leave';
+        const USER_ID = 'd5c48d7b-14f9-11f0-9685-0242c0000232'; // Thay bằng user ID thực tế từ authentication
+        
+        let currentDate = new Date();
+        let selectedDate = null;
+        let leaveSettings = {
+            advanceBookingDays: 7,
+            maxEmployeesPerDay: 5
+        };
+        let calendarData = {};
+
+        // Khởi tạo calendar
+        $(document).ready(function() {
+            loadSettings();
+            renderCalendar();
+            
+            $('#leaveForm').on('submit', function(e) {
+                e.preventDefault();
+                submitLeaveRequest();
+            });
+        });
+
+        // Load settings từ API
+        function loadSettings() {
+            $.get(API_BASE_URL + '/setting')
+                .done(function(response) {
+                    if (response.data) {
+                        leaveSettings = {
+                            advanceBookingDays: response.data.advance_booking_days || 7,
+                            maxEmployeesPerDay: response.data.max_employees_per_day || 5
+                        };
+                    }
+                })
+                .fail(function() {
+                    console.log('Không thể tải cài đặt, sử dụng giá trị mặc định');
+                });
+        }
+
+        // Load dữ liệu calendar từ API
+        function loadCalendarData(date) {
+            const dateStr = formatDate(date);
+            
+            return $.get(API_BASE_URL + '/calendar', { date: dateStr })
+                .done(function(response) {
+                    if (response.data && Array.isArray(response.data)) {
+                        calendarData = {};
+                        response.data.forEach(item => {
+                            const key = formatDate(new Date(item.date));
+                            calendarData[key] = {
+                                maxSlot: item.max_slot || leaveSettings.maxEmployeesPerDay,
+                                availableSlot: item.available_slot || item.max_slot || leaveSettings.maxEmployeesPerDay,
+                                confirmedLeaves: item.confirmed_leaves || [],
+                                pendingRequests: item.pending_requests || []
+                            };
+                        });
+                    }
+                })
+                .fail(function() {
+                    console.log('Không thể tải dữ liệu calendar');
+                });
+        }
+
+        // Render calendar
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            // Update header
+            const monthNames = [
+                'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+                'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
+            ];
+            $('#monthYear').text(monthNames[month] + ', ' + year);
+            
+            // Load data và render grid
+            loadCalendarData(currentDate).then(() => {
+                renderCalendarGrid(year, month);
+            });
+        }
+
+        function renderCalendarGrid(year, month) {
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const today = new Date();
+            
+            // Điều chỉnh để bắt đầu từ thứ 2
+            const startDate = new Date(firstDay);
+            const dayOfWeek = firstDay.getDay();
+            const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            startDate.setDate(firstDay.getDate() - mondayOffset);
+            
+            const grid = $('#calendarGrid');
+            grid.empty();
+            
+            // Render 6 tuần
+            for (let week = 0; week < 6; week++) {
+                for (let day = 0; day < 7; day++) {
+                    const currentDay = new Date(startDate);
+                    currentDay.setDate(startDate.getDate() + (week * 7 + day));
+                    
+                    const dayElement = createDayElement(currentDay, today, year, month);
+                    grid.append(dayElement);
+                }
+            }
+        }
+
+        function createDayElement(date, today, currentYear, currentMonth) {
+            const dayDiv = $('<div class="calendar-day"></div>');
+            const dayNumber = date.getDate();
+            const isCurrentMonth = date.getMonth() === currentMonth;
+            const isToday = isSameDate(date, today);
+            const isPast = date < today && !isToday;
+            const dateStr = formatDate(date);
+            
+            // Thêm classes
+            if (!isCurrentMonth) {
+                dayDiv.addClass('other-month');
+            }
+            if (isToday) {
+                dayDiv.addClass('today');
+            }
+            if (isPast) {
+                dayDiv.addClass('past-day');
+            }
+            
+            // Kiểm tra advance booking
+            const daysDifference = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+            const canBook = daysDifference >= 0 && daysDifference <= leaveSettings.advanceBookingDays;
+            
+            if (!canBook && !isPast) {
+                dayDiv.addClass('no-advance-booking');
+            }
+            
+            // Lấy data cho ngày này
+            const dayData = calendarData[dateStr] || {
+                maxSlot: leaveSettings.maxEmployeesPerDay,
+                availableSlot: leaveSettings.maxEmployeesPerDay,
+                confirmedLeaves: [],
+                pendingRequests: []
+            };
+            
+            // Tạo nội dung
+            const dayContent = `
+                <div class="day-number">${dayNumber}</div>
+                <div class="day-stats">
+                    <div class="stat-line">
+                        <span class="stat-icon available"></span>
+                        <span class="stat-text">x ${dayData.availableSlot}</span>
+                    </div>
+                    <div class="stat-line">
+                        <span class="stat-icon confirmed"></span>
+                        <span class="stat-text">x ${dayData.confirmedLeaves.length}</span>
+                    </div>
+                    <div class="stat-line">
+                        <span class="stat-icon pending"></span>
+                        <span class="stat-text">x ${dayData.pendingRequests.length}</span>
+                    </div>
+                </div>
+            `;
+            
+            dayDiv.html(dayContent);
+            
+            // Thêm click handler
+            if (!isPast && canBook && isCurrentMonth) {
+                dayDiv.on('click', function() {
+                    openLeaveModal(date, dayData);
+                });
+            }
+            
+            return dayDiv;
+        }
+
+        function openLeaveModal(date, dayData) {
+            selectedDate = date;
+            const dateStr = formatDateVN(date);
+            
+            $('#selectedDate').val(dateStr);
+            $('#reason').val('');
+            
+            // Hiển thị thông tin chi tiết ngày
+            const detailHtml = `
+                <div class="detail-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #28a745;">${dayData.availableSlot}</div>
+                        <div class="stat-label">Slot còn trống</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #17a2b8;">${dayData.confirmedLeaves.length}</div>
+                        <div class="stat-label">Đã xác nhận</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #ffc107;">${dayData.pendingRequests.length}</div>
+                        <div class="stat-label">Đang chờ</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #dc3545;">${Math.max(0, dayData.maxSlot - dayData.availableSlot - dayData.confirmedLeaves.length)}</div>
+                        <div class="stat-label">Mong muốn</div>
+                    </div>
+                </div>
+            `;
+            
+            $('#dayDetail').html(detailHtml);
+            
+            // Hiển thị cảnh báo nếu hết slot
+            const alertContainer = $('#alertContainer');
+            alertContainer.empty();
+            
+            if (dayData.availableSlot <= 0) {
+                alertContainer.html(`
+                    <div class="alert alert-warning">
+                        <strong>Lưu ý:</strong> Ngày này đã hết slot nghỉ. Yêu cầu của bạn sẽ được đưa vào danh sách mong muốn và chờ phê duyệt.
+                    </div>
+                `);
+                $('#submitBtn').text('Gửi mong muốn');
+            } else {
+                alertContainer.html(`
+                    <div class="alert alert-info">
+                        Ngày này còn <strong>${dayData.availableSlot}</strong> slot nghỉ. Yêu cầu của bạn sẽ được xác nhận ngay lập tức.
+                    </div>
+                `);
+                $('#submitBtn').text('Đăng ký nghỉ');
+            }
+            
+            $('#leaveModal').show();
+        }
+
+        function closeModal() {
+            $('#leaveModal').hide();
+            selectedDate = null;
+        }
+
+        function submitLeaveRequest() {
+            if (!selectedDate) return;
+            
+            const reason = $('#reason').val().trim();
+            if (!reason) {
+                alert('Vui lòng nhập lý do nghỉ phép');
+                return;
+            }
+            
+            const requestData = {
+                user_id: USER_ID,
+                leave_date: formatDate(selectedDate),
+                reason: reason
+            };
+            
+            // Disable submit button
+            $('#submitBtn').prop('disabled', true).text('Đang gửi...');
+            
+            $.ajax({
+                url: API_BASE_URL + '/',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(requestData),
+                success: function(response) {
+                    alert('Gửi yêu cầu nghỉ phép thành công!');
+                    closeModal();
+                    renderCalendar(); // Refresh calendar
+                },
+                error: function(xhr) {
+                    let errorMsg = 'Có lỗi xảy ra khi gửi yêu cầu';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    alert(errorMsg);
+                },
+                complete: function() {
+                    $('#submitBtn').prop('disabled', false).text('Gửi yêu cầu');
+                }
+            });
+        }
+
+        function previousMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        // Utility functions
+        function formatDate(date) {
+            return date.getFullYear() + '-' + 
+                   String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                   String(date.getDate()).padStart(2, '0');
+        }
+
+        function formatDateVN(date) {
+            return String(date.getDate()).padStart(2, '0') + '/' + 
+                   String(date.getMonth() + 1).padStart(2, '0') + '/' + 
+                   date.getFullYear();
+        }
+
+        function isSameDate(date1, date2) {
+            return date1.getFullYear() === date2.getFullYear() &&
+                   date1.getMonth() === date2.getMonth() &&
+                   date1.getDate() === date2.getDate();
+        }
+
+        // Close modal when clicking outside
+        $(window).on('click', function(e) {
+            if (e.target.id === 'leaveModal') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

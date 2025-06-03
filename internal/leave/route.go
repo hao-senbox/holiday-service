@@ -11,11 +11,12 @@ func RegisterRoutes(r *gin.Engine, handler *LeaveHandler) {
 		leaveGroup.GET("/my-request/:user-id", handler.GetMyRequest)
 		leaveGroup.GET("pending-request", handler.GetPendingRequest)
 		leaveGroup.PUT("/:id", handler.UpdateRequestLeave)
+		leaveGroup.GET("/statistical", handler.GetStatistical)
 
 		leaveGroup.GET("/calendar", handler.GetAllLeaveCalendar)
 		leaveGroup.GET("/calendar/:id", handler.GetDetailLeaveCalendar)
 		leaveGroup.PUT("/calendar/:id", handler.EditMaxSlot)
-		
+
 		leaveGroup.GET("/setting", handler.GetSetting)
 		leaveGroup.PUT("/setting/:id", handler.UpdateSetting)
 	}

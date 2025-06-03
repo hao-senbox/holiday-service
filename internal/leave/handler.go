@@ -178,3 +178,18 @@ func (h *LeaveHandler) UpdateRequestLeave(c *gin.Context) {
 	helper.SendSuccess(c, http.StatusOK, "Success", nil)
 
 }
+
+func (h *LeaveHandler) GetStatistical (c *gin.Context) {
+
+	dateFrom := c.Query("date_from")
+	dateTo := c.Query("date_to")
+
+	data, err := h.leaveService.GetStatistical(c, dateFrom, dateTo)
+	if err != nil {
+		helper.SendError(c, http.StatusBadRequest, err, helper.ErrInvalidRequest)
+		return
+	}
+
+	helper.SendSuccess(c, http.StatusOK, "Success", data)
+
+}

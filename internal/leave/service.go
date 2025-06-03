@@ -19,12 +19,13 @@ type LeaveService interface {
 	EditMaxSlot(ctx context.Context, req *EditSlotRequest, id string) error
 	GetPendingRequest(ctx context.Context) ([]*LeaveRequests, error)
 	DeleteRequestLeave(ctx context.Context, req *DeleteLeaveRequest) error
-	UpdateRequestLeave(ctx context.Context, req *UpdateRequest, id string) error	
+	UpdateRequestLeave(ctx context.Context, req *UpdateRequest, id string) error
+	GetStatistical(ctx context.Context, dateFrom string, dateTo string) (*LeaveStatistical, error)
 }
 
 type leaveService struct {
 	leaveRepository LeaveRepository
-	userService     user.UserService	
+	userService     user.UserService
 }
 
 func NewLeaveService(leaveRepository LeaveRepository, userService user.UserService) LeaveService {
@@ -33,7 +34,6 @@ func NewLeaveService(leaveRepository LeaveRepository, userService user.UserServi
 		userService:     userService,
 	}
 }
-
 
 func (s *leaveService) CreateRequestLeave(ctx context.Context, req *CreateLeaveRequest) error {
 
@@ -54,7 +54,6 @@ func (s *leaveService) CreateRequestLeave(ctx context.Context, req *CreateLeaveR
 	if err != nil {
 		return err
 	}
-
 
 	leaveItem := LeaveRequests{
 		LeaveDate:   dateParse,
@@ -93,7 +92,7 @@ func (s *leaveService) GetAllLeaveCalendar(ctx context.Context, date string) ([]
 }
 
 func (s *leaveService) GetDetailLeaveCalendar(ctx context.Context, id string) (*DailyLeaveSolt, error) {
-	
+
 	if id == "" {
 		return nil, fmt.Errorf("id is empty")
 	}
@@ -123,8 +122,8 @@ func (s *leaveService) UpdateSetting(ctx context.Context, req *SettingRequest, i
 	}
 
 	setting := Setting{
-		MaxEmployeesPerDay:  req.MaxEmployeesPerDay,
-		AdvanceBookingDays:  req.AdvanceBookingDays,
+		MaxEmployeesPerDay: req.MaxEmployeesPerDay,
+		AdvanceBookingDays: req.AdvanceBookingDays,
 		UpdatedAt:          time.Now(),
 	}
 
@@ -228,4 +227,132 @@ func (s *leaveService) UpdateRequestLeave(ctx context.Context, req *UpdateReques
 
 	return s.leaveRepository.UpdateRequestLeave(ctx, req.Types, objectID)
 
+}
+
+func (s *leaveService) GetStatistical(ctx context.Context, dateFrom string, dateTo string) (*LeaveStatistical, error) {
+
+	if dateFrom == "" {
+		return nil, fmt.Errorf("date from is empty")
+	}
+
+	if dateTo == "" {
+		return nil, fmt.Errorf("date to is empty")
+	}
+
+	dateFromParse, err := time.Parse("2006-01-02", dateFrom)
+	if err != nil {
+		return nil, err
+	}
+
+	dateToParse, err := time.Parse("2006-01-02", dateTo)
+	if err != nil {
+		return nil, err
+	}
+
+	leaves, err := s.leaveRepository.GetAllLeaves(ctx, &dateFromParse, &dateToParse)
+	if err != nil {
+		return nil, err
+	}
+
+	return caculateStatistical(leaves), nil
+
+}
+
+func caculateStatistical(leaves []*LeaveRequests) *LeaveStatistical {
+
+	stats := &LeaveStatistical{}
+
+	stats.TotalRequested = len(leaves)
+
+	statusCount := make(map[string]int)
+	requestTypeCount := make(map[string]int)
+	userCount := make(map[string]*UserStats)
+	monthCount := make(map[string]*MonthlyStats)
+	weekdayCount := make(map[string]int)
+
+	for _, item := range leaves {
+
+		statusCount[item.Status]++
+		requestTypeCount[item.RequestType]++
+
+		if userStat, ok := userCount[item.UserID]; ok {
+			userStat.TotalRequests++
+			if item.Status == "approved"  || item.Status == "confirmed" {
+				userStat.ApprovedRequests++
+			}
+		} else {
+			var approvedRequests int
+			if item.Status == "approved" || item.Status == "confirmed" {
+				approvedRequests = 1
+			} else {
+				approvedRequests = 0
+			}
+			userStat := &UserStats{
+				UserID:           item.UserID,
+				UserName:         item.UserName,
+				TotalRequests:    1,
+				ApprovedRequests: approvedRequests,
+			}
+			userCount[item.UserID] = userStat
+		}
+
+		monthKey := item.LeaveDate.Format("2006-01")
+
+		if monthStat, ok := monthCount[monthKey]; ok {
+			monthStat.Count++
+			if item.Status == "approved" {
+				monthStat.Approved++
+			} else if item.Status == "rejected" {
+				monthStat.Rejected++
+			}
+		} else {
+			monthStat := &MonthlyStats{
+				Month:    monthKey,
+				Count:    1,
+				Approved: 0,
+				Rejected: 0,
+			}
+			if item.Status == "approved" {
+				monthStat.Approved++
+			} else if item.Status == "rejected" {
+				monthStat.Rejected++
+			}
+			monthCount[monthKey] = monthStat
+		}
+
+		weekdayCount[item.LeaveDate.Weekday().String()]++
+	}
+
+	stats.TotalConfirmed = statusCount["approved"]
+	stats.TotalPending = statusCount["pending"]
+	stats.TotalRejected = statusCount["rejected"]
+	stats.ImmediateRequests = requestTypeCount["immediate"]
+
+	if stats.TotalRequested > 0 {
+		stats.ApproveRate = float64(stats.TotalConfirmed) / float64(stats.TotalRequested) * 100
+	}
+
+	for _, monthStat := range monthCount {
+		stats.RequestsByMonth = append(stats.RequestsByMonth, *monthStat)
+	}
+
+	for weekday, count := range weekdayCount {
+		stats.RequestByWeekDay = append(stats.RequestByWeekDay, WeeklyStats{
+			Weekday: weekday,
+			Count:   count,
+		})
+	}
+
+	for _, userStat := range userCount {
+		if userStat.TotalRequests > 0 {
+			userStat.ApprovalRate = float64(userStat.ApprovedRequests) / float64(userStat.TotalRequests) * 100
+		}
+		stats.TopRequestUsers = append(stats.TopRequestUsers, *userStat)
+	}
+
+	if len(userCount) > 0 {
+		stats.AverageRequestsPerUser = float64(stats.TotalRequested) / float64(len(userCount))
+	}
+
+	return stats
 }

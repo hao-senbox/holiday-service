@@ -21,6 +21,7 @@ type LeaveRepository interface {
 	GetPendingRequest(ctx context.Context) ([]*LeaveRequests, error)
 	DeleteRequestLeave(ctx context.Context, date *time.Time, userID string) error
 	UpdateRequestLeave(ctx context.Context, types string, id primitive.ObjectID) error
+	GetAllLeaves(ctx context.Context, dateFrom *time.Time, dateTo *time.Time) ([]*LeaveRequests, error)
 }
 
 type leaveRepository struct {
@@ -244,7 +245,14 @@ func (r *leaveRepository) GetDailyLeaveSlots(ctx context.Context, date *time.Tim
 
 	filter := bson.M{}
 	if date != nil {
-		filter["date"] = bson.M{"$gte": *date}
+		start := date.AddDate(0, 0, -30)
+		end := date.AddDate(0, 0, 30)
+
+		filter["date"] = bson.M{
+			"$gte": start,
+			"$lte": end,
+		}
+
 	}
 
 	cursor, err := r.collectionDailyLeaveSlots.Find(ctx, filter)
@@ -386,5 +394,26 @@ func (r *leaveRepository) UpdateRequestLeave(ctx context.Context, types string, 
 	}
 
 	return nil
-	
+
+}
+
+func (r *leaveRepository) GetAllLeaves(ctx context.Context, dateFrom *time.Time, dateTo *time.Time) ([]*LeaveRequests, error) {
+
+	var leaveRequests []*LeaveRequests
+
+	filter := bson.M{"leave_date": bson.M{"$gte": *dateFrom, "$lte": *dateTo}}
+
+	cursor, err := r.collectionLeave.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	err = cursor.All(ctx, &leaveRequests)
+	if err != nil {
+		return nil, err
+	}
+
+	return leaveRequests, nil
+
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"service-holiday/config"
 	"service-holiday/internal/leave"
@@ -63,7 +64,10 @@ func main() {
 	leaveHandler := leave.NewLeaveHandler(leaveService)
 
 	r := gin.Default()
-	
+	r.LoadHTMLGlob("web/*")
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", gin.H{})
+	})
 	leave.RegisterRoutes(r, leaveHandler)
 	
 	port := os.Getenv("PORT")
