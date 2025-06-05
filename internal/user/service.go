@@ -13,6 +13,7 @@ import (
 
 type UserService interface {
 	GetUserInfor(userID string) (*UserInfor, error)
+	GetAllUser() ([]*UserInfor, error)
 }
 
 type userService struct {
@@ -61,6 +62,7 @@ func NewServiceAPI(client *api.Client, serviceName string) *callAPI {
 
 
 func (u *userService) GetUserInfor(userID string) (*UserInfor, error) {
+
     data := u.client.GetUserInfor(userID)
 	
     if data == nil {
@@ -88,6 +90,28 @@ func (u *userService) GetUserInfor(userID string) (*UserInfor, error) {
         Avartar:  safeString(innerData["avatar"]),
         Role:     roleName,
     }, nil
+}
+
+func (u *userService) GetAllUser() ([]*UserInfor, error) {
+
+	data := u.client.GetAllUser()
+	if data == nil {
+		return nil, fmt.Errorf("no user data found")
+	}
+
+	var users []*UserInfor
+
+	for _, user := range data {
+		userInfor := &UserInfor{
+			UserID:   safeString(user["id"]),
+			UserName: safeString(user["username"]),
+			FullName: safeString(user["fullname"]),
+			Avartar:  safeString(user["avatar"]),
+		}
+		users = append(users, userInfor)
+	}
+
+	return users, nil
 }
 
 
@@ -121,4 +145,35 @@ func (c *callAPI) GetUserInfor(userID string) map[string]interface{} {
 	myMap := userData.(map[string]interface{})
 
 	return myMap
+}
+
+func (c *callAPI) GetAllUser() []map[string]interface{} {
+
+	endpoint := "/v1/user/all/?role=all"
+	res, err := c.client.CallAPI(c.clientServer, endpoint, http.MethodGet, nil, nil)
+	if err != nil {
+		fmt.Printf("Error calling API: %v\n", err)
+		return nil
+	}
+
+	var parse map[string]interface{}
+	if err := json.Unmarshal([]byte(res), &parse); err != nil {
+		fmt.Printf("Error calling API: %v\n", err)
+		return nil
+	}
+
+	dataListRaw, ok := parse["data"].([]interface{})
+	if !ok {
+		fmt.Printf("Error calling API: %v\n", err)
+		return nil
+	}
+
+	users := make([]map[string]interface{}, 0)
+
+	for _, item := range dataListRaw {
+		users = append(users, item.(map[string]interface{}))
+	}
+
+	return users
+
 }

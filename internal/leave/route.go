@@ -13,6 +13,8 @@ func RegisterRoutes(r *gin.Engine, handler *LeaveHandler) {
 		leaveGroup.PUT("/:id", handler.UpdateRequestLeave)
 		leaveGroup.GET("/statistical", handler.GetStatistical)
 
+		leaveGroup.GET("leave-balance/:user-id", handler.GetLeaveBalanceUser)
+
 		leaveGroup.GET("/calendar", handler.GetAllLeaveCalendar)
 		leaveGroup.GET("/calendar/:id", handler.GetDetailLeaveCalendar)
 		leaveGroup.PUT("/calendar/:id", handler.EditMaxSlot)

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"service-holiday/internal/user"
 	"time"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -21,6 +20,8 @@ type LeaveService interface {
 	DeleteRequestLeave(ctx context.Context, req *DeleteLeaveRequest) error
 	UpdateRequestLeave(ctx context.Context, req *UpdateRequest, id string) error
 	GetStatistical(ctx context.Context, dateFrom string, dateTo string) (*LeaveStatistical, error)
+	AddCronLeavesBalance(ctx context.Context) error
+	GetLeaveBalanceUser(ctx context.Context, userID string) (interface{}, error)
 }
 
 type leaveService struct {
@@ -355,4 +356,102 @@ func caculateStatistical(leaves []*LeaveRequests) *LeaveStatistical {
 	}
 
 	return stats
+}
+
+func (s *leaveService) GetLeaveBalanceUser(ctx context.Context, userID string) (interface{}, error) {
+	
+	data, err := s.userService.GetAllUser()
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (s *leaveService) AddCronLeavesBalance(ctx context.Context) error {
+
+	dataUser, err := s.userService.GetAllUser()
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Total user: %d\n", len(dataUser))
+	dataLeavesBanlance, err := s.leaveRepository.GetAllLeaveBalance(ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Total leave balance: %d\n", len(dataLeavesBanlance))
+	balanceMap := make(map[string]*UserLeaveBalance)
+	currentYear := time.Now().Year()
+
+	for i := range dataLeavesBanlance {
+		key := fmt.Sprintf("%s_%d", dataLeavesBanlance[i].UserID, currentYear)
+		balanceMap[key] = dataLeavesBanlance[i]
+	}
+
+	var newBalance []*UserLeaveBalance
+	var updateBalance []UserLeaveBalance
+	var transaction []LeaveTransaction
+
+	for _, item := range dataUser {
+
+		key := fmt.Sprintf("%s_%d", item.UserID, currentYear)
+
+		if existingBalance, ok := balanceMap[key]; ok {
+
+			existingBalance.TotalLeaveBanlance += 1
+			existingBalance.RemaindingLeave += 1
+			existingBalance.LastUpdated = time.Now()
+
+			updateBalance = append(updateBalance, *existingBalance)
+
+		} else {
+
+			newBalance = append(newBalance, &UserLeaveBalance{
+				ID:                 primitive.NewObjectID(),
+				UserID:             item.UserID,
+				Year:               currentYear,
+				TotalLeaveBanlance: 1,
+				UsedLeave:          0,
+				RemaindingLeave:    1,
+				LastUpdated:        time.Now(),
+			})
+
+			reason := fmt.Sprintf("Monthly earned leave - %s", time.Now().Format("2006-01"))
+
+			transaction = append(transaction, LeaveTransaction{
+				ID:              primitive.NewObjectID(),
+				UserID:          item.UserID,
+				TransactionType: "EARNED",
+				Date:            time.Now(),
+				Reason:          &reason,
+				CreatedAt:       time.Now(),
+				UpdatedAt:       time.Now(),
+			})
+
+		}
+	}
+
+	if len(newBalance) > 0 {
+		err = s.leaveRepository.CreateLeaveBalance(ctx, newBalance)
+		if err != nil {
+			return err
+		}
+	}
+
+	// if len(updateBalance) > 0 {
+	// 	err = s.leaveRepository.UpdateLeaveBalance(ctx, updateBalance)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
+
+	// if len(transaction) > 0 {
+	// 	err = s.leaveRepository.CreateLeaveTransaction(ctx, transaction)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
+
+	return nil
+
 }

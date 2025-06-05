@@ -193,3 +193,16 @@ func (h *LeaveHandler) GetStatistical (c *gin.Context) {
 	helper.SendSuccess(c, http.StatusOK, "Success", data)
 
 }
+
+func (h *LeaveHandler) GetLeaveBalanceUser (c *gin.Context) {
+
+	id := c.Param("user-id")
+
+	data, err := h.leaveService.GetLeaveBalanceUser(c, id)
+	if err != nil {
+		helper.SendError(c, http.StatusBadRequest, err, helper.ErrInvalidRequest)
+		return
+	}
+
+	helper.SendSuccess(c, http.StatusOK, "Success", data)
+}

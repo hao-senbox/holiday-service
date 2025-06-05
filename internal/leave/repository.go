@@ -22,21 +22,26 @@ type LeaveRepository interface {
 	DeleteRequestLeave(ctx context.Context, date *time.Time, userID string) error
 	UpdateRequestLeave(ctx context.Context, types string, id primitive.ObjectID) error
 	GetAllLeaves(ctx context.Context, dateFrom *time.Time, dateTo *time.Time) ([]*LeaveRequests, error)
+	GetAllLeaveBalance(ctx context.Context) ([]*UserLeaveBalance, error)
+	CreateLeaveBalance(ctx context.Context, leaveBalance []*UserLeaveBalance) error
 }
 
 type leaveRepository struct {
 	collectionLeave           *mongo.Collection
 	collectionLeaveSetting    *mongo.Collection
 	collectionDailyLeaveSlots *mongo.Collection
+	collectionLeaveBalance    *mongo.Collection
 }
 
 func NewLeaveRepository(collectionLeave *mongo.Collection,
 	collectionLeaveSetting *mongo.Collection,
-	collectionDailyLeaveSlots *mongo.Collection) LeaveRepository {
+	collectionDailyLeaveSlots *mongo.Collection,
+	collectionLeaveBalance *mongo.Collection) LeaveRepository {
 	return &leaveRepository{
 		collectionLeave:           collectionLeave,
 		collectionLeaveSetting:    collectionLeaveSetting,
 		collectionDailyLeaveSlots: collectionDailyLeaveSlots,
+		collectionLeaveBalance:    collectionLeaveBalance,
 	}
 }
 
@@ -416,4 +421,43 @@ func (r *leaveRepository) GetAllLeaves(ctx context.Context, dateFrom *time.Time,
 
 	return leaveRequests, nil
 
+}
+
+func (r *leaveRepository) GetAllLeaveBalance(ctx context.Context) ([]*UserLeaveBalance, error) {
+
+	var userLeaveBalances []*UserLeaveBalance
+
+	cursor, err := r.collectionLeaveBalance.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	err = cursor.All(ctx, &userLeaveBalances)
+	if err != nil {
+		return nil, err
+	}
+
+	if userLeaveBalances == nil {
+		return []*UserLeaveBalance{}, nil
+	}
+
+	return userLeaveBalances, nil
+
+}
+
+func (r *leaveRepository) CreateLeaveBalance(ctx context.Context, leaveBalance []*UserLeaveBalance) error {
+
+	docs := make([]interface{}, len(leaveBalance))
+	for i, leave := range leaveBalance {
+		docs[i] = leave
+	}
+
+	_, err := r.collectionLeaveBalance.InsertMany(ctx, docs)
+	if err != nil {
+		return err
+	}
+
+	return nil
+	
 }
