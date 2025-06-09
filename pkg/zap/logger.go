@@ -2,8 +2,8 @@ package zap
 
 import (
 	"os"
-	"service-holiday/config"
-	"service-holiday/pkg/constants"
+	"worktime-service/config"
+	"worktime-service/pkg/constants"
 	"time"
 
 	"github.com/EventStore/EventStore-Client-Go/esdb"

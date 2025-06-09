@@ -1,4 +1,4 @@
-module service-holiday
+module worktime-service
 
 go 1.24.0
 

@@ -2,7 +2,7 @@ package leave
 
 import (
 	"net/http"
-	"service-holiday/helper"
+	"worktime-service/helper"
 	"github.com/gin-gonic/gin"
 )
 

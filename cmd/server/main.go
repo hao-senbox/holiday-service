@@ -5,13 +5,15 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"service-holiday/config"
-	"service-holiday/internal/leave"
-	"service-holiday/internal/user"
-	"service-holiday/pkg/consul"
-	"service-holiday/pkg/zap"
 	"time"
-	// cronV3 "github.com/robfig/cron/v3" 
+	"worktime-service/config"
+	"worktime-service/internal/attendance"
+	"worktime-service/internal/leave"
+	"worktime-service/internal/user"
+	"worktime-service/pkg/consul"
+	"worktime-service/pkg/zap"
+
+	// cronV3 "github.com/robfig/cron/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -57,9 +59,15 @@ func main() {
 	leaveRequestCollection := mongoClient.Database(cfg.MongoDB).Collection("leave_requests")
 	dailyLeaveSlotsCollection := mongoClient.Database(cfg.MongoDB).Collection("daily_leave_slots")
 	leaveBalanceCollection := mongoClient.Database(cfg.MongoDB).Collection("leave_balance")
+	attendanceCollection := mongoClient.Database(cfg.MongoDB).Collection("attendance_logs")
+	attendanceDailyCollection := mongoClient.Database(cfg.MongoDB).Collection("attendances_daily")
+	
+	userService := user.NewUserService(consulClient)
+	attendanceRepository := attendance.NewAttendanceRepository(attendanceCollection, attendanceDailyCollection)
+	attendanceService := attendance.NewAttendanceService(attendanceRepository, userService)
+	attendanceHandler := attendance.NewAttendanceHandler(attendanceService)
 
 	leaveRepository := leave.NewLeaveRepository(leaveRequestCollection, settingCollection, dailyLeaveSlotsCollection, leaveBalanceCollection)
-	userService := user.NewUserService(consulClient)
 	leaveService := leave.NewLeaveService(leaveRepository, userService)
 	leaveHandler := leave.NewLeaveHandler(leaveService)
 
@@ -72,6 +80,7 @@ func main() {
 	})
 
 	leave.RegisterRoutes(r, leaveHandler)
+	attendance.RegisterRoutes(r, attendanceHandler)
 
 	// c := cronV3.New(cronV3.WithSeconds(), cronV3.WithLogger(cronV3.DefaultLogger))
 
@@ -121,3 +130,5 @@ func connectToMongoDB(uri string) (*mongo.Client, error) {
 	log.Println("Successfully connected to MongoDB")
 	return client, nil
 }
+
+

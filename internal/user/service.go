@@ -2,7 +2,7 @@ package user
 
 import (
 
-	"service-holiday/pkg/consul"
+	"worktime-service/pkg/consul"
 	"encoding/json"
 	"fmt"
 	"net/http"

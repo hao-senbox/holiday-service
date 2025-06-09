@@ -3,7 +3,7 @@ package leave
 import (
 	"context"
 	"fmt"
-	"service-holiday/internal/user"
+	"worktime-service/internal/user"
 	"time"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -374,12 +374,12 @@ func (s *leaveService) AddCronLeavesBalance(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Total user: %d\n", len(dataUser))
+
 	dataLeavesBanlance, err := s.leaveRepository.GetAllLeaveBalance(ctx)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Total leave balance: %d\n", len(dataLeavesBanlance))
+
 	balanceMap := make(map[string]*UserLeaveBalance)
 	currentYear := time.Now().Year()
 
