@@ -1,19 +1,19 @@
 package user
 
 import (
-
-	"worktime-service/pkg/consul"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
-
+	"worktime-service/pkg/constants"
+	"worktime-service/pkg/consul"
 	"github.com/hashicorp/consul/api"
 )
 
 type UserService interface {
-	GetUserInfor(userID string) (*UserInfor, error)
-	GetAllUser() ([]*UserInfor, error)
+	GetUserInfor(ctx context.Context, userID string) (*UserInfor, error)
+	GetAllUser(ctx context.Context) ([]*UserInfor, error)
 }
 
 type userService struct {
@@ -61,9 +61,17 @@ func NewServiceAPI(client *api.Client, serviceName string) *callAPI {
 }
 
 
-func (u *userService) GetUserInfor(userID string) (*UserInfor, error) {
+func (u *userService) GetUserInfor(ctx context.Context, userID string) (*UserInfor, error) {
 
-    data := u.client.GetUserInfor(userID)
+    token, ok := ctx.Value(constants.TokenKey).(string)
+	if !ok {
+		return nil, fmt.Errorf("token not found in context")
+	}
+
+	data, err := u.client.GetUserInfor(userID, token)
+	if err != nil {
+		return nil, err
+	}
 	
     if data == nil {
         return nil, fmt.Errorf("no user data found for userID: %s", userID)
@@ -92,9 +100,14 @@ func (u *userService) GetUserInfor(userID string) (*UserInfor, error) {
     }, nil
 }
 
-func (u *userService) GetAllUser() ([]*UserInfor, error) {
+func (u *userService) GetAllUser(ctx context.Context) ([]*UserInfor, error) {
 
-	data := u.client.GetAllUser()
+	token, ok := ctx.Value(constants.TokenKey).(string)
+	if !ok {
+		return nil, fmt.Errorf("token not found in context")
+	}
+	
+	data := u.client.GetAllUser(token)
 	if data == nil {
 		return nil, fmt.Errorf("no user data found")
 	}
@@ -127,30 +140,46 @@ func safeString(val interface{}) string {
 }
 
 
-func (c *callAPI) GetUserInfor(userID string) map[string]interface{} {
+func (c *callAPI) GetUserInfor(userID string, token string) (map[string]interface{}, error) {
+
 	endpoint := fmt.Sprintf("/v1/user/%s", userID)
-	res, err := c.client.CallAPI(c.clientServer, endpoint, http.MethodGet, nil, nil)
+
+	header := map[string]string{
+		"Content-Type":  "application/json",
+		"Authorization": "Bearer " + token,
+	}
+
+	res, err := c.client.CallAPI(c.clientServer, endpoint, http.MethodGet, nil, header)
 	if err != nil {
 		fmt.Printf("Error calling API: %v\n", err)
-		return nil
+		return nil, err
 	}
 
 	var userData interface{}
-	json.Unmarshal([]byte(res), &userData)
-	if userData == nil {
-		fmt.Println("User data is nil")
-		return nil
+	
+	err = json.Unmarshal([]byte(res), &userData)
+	if err != nil {
+		fmt.Printf("Error unmarshalling response: %v\n", err)
+		return nil, err
 	}
+
 
 	myMap := userData.(map[string]interface{})
 
-	return myMap
+	return myMap, nil
 }
 
-func (c *callAPI) GetAllUser() []map[string]interface{} {
+func (c *callAPI) GetAllUser(token string) []map[string]interface{} {
 
 	endpoint := "/v1/user/all/?role=all"
-	res, err := c.client.CallAPI(c.clientServer, endpoint, http.MethodGet, nil, nil)
+
+	header := map[string]string{
+		"Content-Type":  "application/json",
+		"Authorization": "Bearer " + token,
+	}
+
+	
+	res, err := c.client.CallAPI(c.clientServer, endpoint, http.MethodGet, nil, header)
 	if err != nil {
 		fmt.Printf("Error calling API: %v\n", err)
 		return nil

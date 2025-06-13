@@ -1,8 +1,12 @@
 package leave
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"worktime-service/helper"
+	"worktime-service/pkg/constants"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,9 +22,23 @@ func NewLeaveHandler(leaveService LeaveService) *LeaveHandler {
 
 func (h *LeaveHandler) GetMyRequest(c *gin.Context) {
 
-	userID := c.Param("user-id")
+	userID, exists := c.Get(constants.UserID)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("user_id not found"), helper.ErrInvalidRequest)
+		return
+	}
 
-	data, err := h.leaveService.GetMyRequest(c, userID)
+	userIDToken := userID.(string)
+
+	token, exists := c.Get(constants.Token)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("token not found"), helper.ErrInvalidRequest)
+		return
+	}
+	
+	ctx := context.WithValue(c, constants.TokenKey, token)
+
+	data, err := h.leaveService.GetMyRequest(ctx, userIDToken)
 	
 	if err != nil {
 		helper.SendError(c, 400, err, helper.ErrInvalidRequest)
@@ -66,7 +84,23 @@ func (h *LeaveHandler) CreateRequestLeave(c *gin.Context) {
 		return
 	}
 
-	err := h.leaveService.CreateRequestLeave(c, &req)
+	userID, exists := c.Get(constants.UserID)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("user_id not found"), helper.ErrInvalidRequest)
+		return
+	}
+
+	req.UserID = userID.(string)
+
+	token, exists := c.Get(constants.Token)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("token not found"), helper.ErrInvalidRequest)
+		return
+	}
+	
+	ctx := context.WithValue(c, constants.TokenKey, token)
+
+	err := h.leaveService.CreateRequestLeave(ctx, &req)
 	if err != nil {
 		helper.SendError(c, 400, err, helper.ErrInvalidRequest)
 		return
@@ -135,7 +169,7 @@ func (h *LeaveHandler) GetPendingRequest(c *gin.Context) {
 		helper.SendError(c, http.StatusBadRequest, err, helper.ErrInvalidRequest)
 		return
 	}
-
+ 
 	helper.SendSuccess(c, http.StatusOK, "Success", data)
 
 }
@@ -148,7 +182,23 @@ func (h *LeaveHandler) DeleteRequestLeave(c *gin.Context) {
 		return
 	}
 
-	err := h.leaveService.DeleteRequestLeave(c, &req)
+	userID, exists := c.Get(constants.UserID)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("user_id not found"), helper.ErrInvalidRequest)
+		return
+	}
+
+	req.UserID = userID.(string)
+
+	token, exists := c.Get(constants.Token)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("token not found"), helper.ErrInvalidRequest)
+		return
+	}
+	
+	ctx := context.WithValue(c, constants.TokenKey, token)
+
+	err := h.leaveService.DeleteRequestLeave(ctx, &req)
 	if err != nil {
 		helper.SendError(c, http.StatusBadRequest, err, helper.ErrInvalidRequest)
 		return
@@ -194,15 +244,15 @@ func (h *LeaveHandler) GetStatistical (c *gin.Context) {
 
 }
 
-func (h *LeaveHandler) GetLeaveBalanceUser (c *gin.Context) {
+// func (h *LeaveHandler) GetLeaveBalanceUser (c *gin.Context) {
 
-	id := c.Param("user-id")
+// 	id := c.Param("user-id")
 
-	data, err := h.leaveService.GetLeaveBalanceUser(c, id)
-	if err != nil {
-		helper.SendError(c, http.StatusBadRequest, err, helper.ErrInvalidRequest)
-		return
-	}
+// 	data, err := h.leaveService.GetLeaveBalanceUser(c, id)
+// 	if err != nil {
+// 		helper.SendError(c, http.StatusBadRequest, err, helper.ErrInvalidRequest)
+// 		return
+// 	}
 
-	helper.SendSuccess(c, http.StatusOK, "Success", data)
-}
+// 	helper.SendSuccess(c, http.StatusOK, "Success", data)
+// }

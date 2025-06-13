@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,7 +24,7 @@
             margin: 0 auto;
             background: white;
             border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
 
@@ -45,7 +46,7 @@
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             border: none;
             color: white;
             width: 40px;
@@ -60,7 +61,7 @@
         }
 
         .nav-btn:hover {
-            background: rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.3);
             transform: translateY(-50%) scale(1.1);
         }
 
@@ -194,7 +195,7 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             animation: fadeIn 0.3s ease;
         }
 
@@ -205,18 +206,30 @@
             border-radius: 15px;
             width: 90%;
             max-width: 500px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             animation: slideIn 0.3s ease;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         @keyframes slideIn {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         .modal-header {
@@ -337,7 +350,7 @@
             padding: 15px;
             border-radius: 8px;
             text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         .stat-number {
@@ -369,8 +382,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .user-info {
@@ -397,22 +415,23 @@
                 min-height: 90px;
                 padding: 5px;
             }
-            
+
             .day-stats {
                 font-size: 10px;
             }
-            
+
             .modal-content {
                 margin: 5% auto;
                 padding: 20px;
             }
-            
+
             .detail-stats {
                 grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="calendar-container">
         <div class="user-info">
@@ -421,13 +440,13 @@
                 <div class="user-name" id="userName">Nguyễn Văn A</div>
             </div>
         </div>
-        
+
         <div class="calendar-header">
             <button class="nav-btn prev-btn" onclick="previousMonth()">‹</button>
             <div class="month-year" id="monthYear"></div>
             <button class="nav-btn next-btn" onclick="nextMonth()">›</button>
         </div>
-        
+
         <div class="weekdays">
             <div class="weekday">T2</div>
             <div class="weekday">T3</div>
@@ -437,7 +456,7 @@
             <div class="weekday">T7</div>
             <div class="weekday">CN</div>
         </div>
-        
+
         <div class="calendar-grid" id="calendarGrid">
             <div class="loading">
                 <div class="spinner"></div>
@@ -453,22 +472,23 @@
                 <span class="close" onclick="closeModal()">&times;</span>
                 <h2 class="modal-title">Đăng ký nghỉ phép</h2>
             </div>
-            
+
             <div id="dayDetail" class="day-detail"></div>
-            
+
             <div id="alertContainer"></div>
-            
+
             <form id="leaveForm">
                 <div class="form-group">
                     <label class="form-label">Ngày nghỉ:</label>
                     <input type="text" id="selectedDate" class="form-control" readonly>
                 </div>
-                
+
                 <div class="form-group">
                     <label class="form-label">Lý do nghỉ:</label>
-                    <textarea id="reason" class="form-control" rows="3" placeholder="Nhập lý do xin nghỉ..." required></textarea>
+                    <textarea id="reason" class="form-control" rows="3" placeholder="Nhập lý do xin nghỉ..."
+                        required></textarea>
                 </div>
-                
+
                 <div style="text-align: right;">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Hủy</button>
                     <button type="submit" class="btn btn-primary" id="submitBtn">Gửi yêu cầu</button>
@@ -482,7 +502,7 @@
         // Mock data - thay thế bằng API calls thực tế
         const API_BASE_URL = '/api/v1/leave';
         const USER_ID = 'd5c48d7b-14f9-11f0-9685-0242c0000232'; // Thay bằng user ID thực tế từ authentication
-        
+        const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTMzODkwNDMsIm9yZ2FuaXphdGlvbnMiOiJTRU5CT1ggV0FJVExJU1QiLCJyb2xlcyI6IiIsInVzZXJfaWQiOiIyYjIzYzY3MC00ODBmLTExZjAtODk0Zi0wMjQyYzBhODkwMDYiLCJ1c2VybmFtZSI6InJvbmFsZG8ifQ.NKXocAdIJ4_2l4f8auV_qxAwqytUdV12UWK9wWEf5Bs'
         let currentDate = new Date();
         let selectedDate = null;
         let leaveSettings = {
@@ -492,11 +512,11 @@
         let calendarData = {};
 
         // Khởi tạo calendar
-        $(document).ready(function() {
+        $(document).ready(function () {
             loadSettings();
             renderCalendar();
-            
-            $('#leaveForm').on('submit', function(e) {
+
+            $('#leaveForm').on('submit', function (e) {
                 e.preventDefault();
                 submitLeaveRequest();
             });
@@ -504,56 +524,67 @@
 
         // Load settings từ API
         function loadSettings() {
-            $.get(API_BASE_URL + '/setting')
-                .done(function(response) {
-                    if (response.data) {
-                        leaveSettings = {
-                            advanceBookingDays: response.data.advance_booking_days || 7,
-                            maxEmployeesPerDay: response.data.max_employees_per_day || 5
-                        };
-                    }
-                })
-                .fail(function() {
-                    console.log('Không thể tải cài đặt, sử dụng giá trị mặc định');
-                });
+            $.ajax({
+                url: API_BASE_URL + '/setting',
+                method: 'GET',
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            }).done(function (response) {
+                if (response.data) {
+                    leaveSettings = {
+                        advanceBookingDays: response.data.advance_booking_days || 7,
+                        maxEmployeesPerDay: response.data.max_employees_per_day || 5
+                    };
+                }
+            }).fail(function () {
+                console.log('Không thể tải cài đặt, sử dụng giá trị mặc định');
+            });
         }
+
 
         // Load dữ liệu calendar từ API
         function loadCalendarData(date) {
             const dateStr = formatDate(date);
-            
-            return $.get(API_BASE_URL + '/calendar', { date: dateStr })
-                .done(function(response) {
-                    if (response.data && Array.isArray(response.data)) {
-                        calendarData = {};
-                        response.data.forEach(item => {
-                            const key = formatDate(new Date(item.date));
-                            calendarData[key] = {
-                                maxSlot: item.max_slot || leaveSettings.maxEmployeesPerDay,
-                                availableSlot: item.available_slot || item.max_slot || leaveSettings.maxEmployeesPerDay,
-                                confirmedLeaves: item.confirmed_leaves || [],
-                                pendingRequests: item.pending_requests || []
-                            };
-                        });
-                    }
-                })
-                .fail(function() {
-                    console.log('Không thể tải dữ liệu calendar');
-                });
+
+            return $.ajax({
+                url: API_BASE_URL + '/calendar',
+                method: 'GET',
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                },
+                data: { date: dateStr }
+            }).done(function (response) {
+                if (response.data && Array.isArray(response.data)) {
+                    calendarData = {};
+                    response.data.forEach(item => {
+                        const key = formatDate(new Date(item.date));
+                        calendarData[key] = {
+                            maxSlot: item.max_slot || leaveSettings.maxEmployeesPerDay,
+                            availableSlot: item.available_slot || item.max_slot || leaveSettings.maxEmployeesPerDay,
+                            confirmedLeaves: item.confirmed_leaves || [],
+                            pendingRequests: item.pending_requests || []
+                        };
+                    });
+                }
+            }).fail(function () {
+                console.log('Không thể tải dữ liệu calendar');
+            });
         }
+
 
         // Render calendar
         function renderCalendar() {
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
-            
+
             // Update header
             const monthNames = [
                 'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
                 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
             ];
             $('#monthYear').text(monthNames[month] + ', ' + year);
-            
+
             // Load data và render grid
             loadCalendarData(currentDate).then(() => {
                 renderCalendarGrid(year, month);
@@ -564,22 +595,22 @@
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
             const today = new Date();
-            
+
             // Điều chỉnh để bắt đầu từ thứ 2
             const startDate = new Date(firstDay);
             const dayOfWeek = firstDay.getDay();
             const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
             startDate.setDate(firstDay.getDate() - mondayOffset);
-            
+
             const grid = $('#calendarGrid');
             grid.empty();
-            
+
             // Render 6 tuần
             for (let week = 0; week < 6; week++) {
                 for (let day = 0; day < 7; day++) {
                     const currentDay = new Date(startDate);
                     currentDay.setDate(startDate.getDate() + (week * 7 + day));
-                    
+
                     const dayElement = createDayElement(currentDay, today, year, month);
                     grid.append(dayElement);
                 }
@@ -593,7 +624,7 @@
             const isToday = isSameDate(date, today);
             const isPast = date < today && !isToday;
             const dateStr = formatDate(date);
-            
+
             // Thêm classes
             if (!isCurrentMonth) {
                 dayDiv.addClass('other-month');
@@ -604,15 +635,15 @@
             if (isPast) {
                 dayDiv.addClass('past-day');
             }
-            
+
             // Kiểm tra advance booking
             const daysDifference = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
             const canBook = daysDifference >= 0 && daysDifference <= leaveSettings.advanceBookingDays;
-            
+
             if (!canBook && !isPast) {
                 dayDiv.addClass('no-advance-booking');
             }
-            
+
             // Lấy data cho ngày này
             const dayData = calendarData[dateStr] || {
                 maxSlot: leaveSettings.maxEmployeesPerDay,
@@ -620,7 +651,7 @@
                 confirmedLeaves: [],
                 pendingRequests: []
             };
-            
+
             // Tạo nội dung
             const dayContent = `
                 <div class="day-number">${dayNumber}</div>
@@ -639,26 +670,26 @@
                     </div>
                 </div>
             `;
-            
+
             dayDiv.html(dayContent);
-            
+
             // Thêm click handler
             if (!isPast && canBook && isCurrentMonth) {
-                dayDiv.on('click', function() {
+                dayDiv.on('click', function () {
                     openLeaveModal(date, dayData);
                 });
             }
-            
+
             return dayDiv;
         }
 
         function openLeaveModal(date, dayData) {
             selectedDate = date;
             const dateStr = formatDateVN(date);
-            
+
             $('#selectedDate').val(dateStr);
             $('#reason').val('');
-            
+
             // Hiển thị thông tin chi tiết ngày
             const detailHtml = `
                 <div class="detail-stats">
@@ -680,13 +711,13 @@
                     </div>
                 </div>
             `;
-            
+
             $('#dayDetail').html(detailHtml);
-            
+
             // Hiển thị cảnh báo nếu hết slot
             const alertContainer = $('#alertContainer');
             alertContainer.empty();
-            
+
             if (dayData.availableSlot <= 0) {
                 alertContainer.html(`
                     <div class="alert alert-warning">
@@ -702,7 +733,7 @@
                 `);
                 $('#submitBtn').text('Đăng ký nghỉ');
             }
-            
+
             $('#leaveModal').show();
         }
 
@@ -713,40 +744,43 @@
 
         function submitLeaveRequest() {
             if (!selectedDate) return;
-            
+
             const reason = $('#reason').val().trim();
             if (!reason) {
                 alert('Vui lòng nhập lý do nghỉ phép');
                 return;
             }
-            
+
             const requestData = {
                 user_id: USER_ID,
                 leave_date: formatDate(selectedDate),
                 reason: reason
             };
-            
+
             // Disable submit button
             $('#submitBtn').prop('disabled', true).text('Đang gửi...');
-            
+
             $.ajax({
                 url: API_BASE_URL + '/',
                 method: 'POST',
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                },
                 contentType: 'application/json',
                 data: JSON.stringify(requestData),
-                success: function(response) {
+                success: function (response) {
                     alert('Gửi yêu cầu nghỉ phép thành công!');
                     closeModal();
                     renderCalendar(); // Refresh calendar
                 },
-                error: function(xhr) {
+                error: function (xhr) {
                     let errorMsg = 'Có lỗi xảy ra khi gửi yêu cầu';
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMsg = xhr.responseJSON.message;
                     }
                     alert(errorMsg);
                 },
-                complete: function() {
+                complete: function () {
                     $('#submitBtn').prop('disabled', false).text('Gửi yêu cầu');
                 }
             });
@@ -764,29 +798,30 @@
 
         // Utility functions
         function formatDate(date) {
-            return date.getFullYear() + '-' + 
-                   String(date.getMonth() + 1).padStart(2, '0') + '-' + 
-                   String(date.getDate()).padStart(2, '0');
+            return date.getFullYear() + '-' +
+                String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                String(date.getDate()).padStart(2, '0');
         }
 
         function formatDateVN(date) {
-            return String(date.getDate()).padStart(2, '0') + '/' + 
-                   String(date.getMonth() + 1).padStart(2, '0') + '/' + 
-                   date.getFullYear();
+            return String(date.getDate()).padStart(2, '0') + '/' +
+                String(date.getMonth() + 1).padStart(2, '0') + '/' +
+                date.getFullYear();
         }
 
         function isSameDate(date1, date2) {
             return date1.getFullYear() === date2.getFullYear() &&
-                   date1.getMonth() === date2.getMonth() &&
-                   date1.getDate() === date2.getDate();
+                date1.getMonth() === date2.getMonth() &&
+                date1.getDate() === date2.getDate();
         }
 
         // Close modal when clicking outside
-        $(window).on('click', function(e) {
+        $(window).on('click', function (e) {
             if (e.target.id === 'leaveModal') {
                 closeModal();
             }
         });
     </script>
 </body>
+
 </html>

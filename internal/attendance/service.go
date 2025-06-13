@@ -35,7 +35,7 @@ func (s *attendanceService) CheckIn(c context.Context, req *CheckInRequest) erro
 		return fmt.Errorf("user id is required")
 	}
 
-	dataUser, err := s.userService.GetAllUser()
+	dataUser, err := s.userService.GetAllUser(c)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func (s *attendanceService) CheckOut(c context.Context, req *CheckOutRequest) er
 		return fmt.Errorf("user id is required")
 	}
 
-	dataUser, err := s.userService.GetAllUser()
+	dataUser, err := s.userService.GetAllUser(c)
 	if err != nil {
 		return err
 	}

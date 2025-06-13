@@ -1,10 +1,14 @@
 package attendance
 
-import "github.com/gin-gonic/gin"
+import (
+	"worktime-service/internal/middleware"
+
+	"github.com/gin-gonic/gin"
+)
 
 func RegisterRoutes(r *gin.Engine, handler *AttendanceHandler) {
 
-	attendanceGroup := r.Group("/api/v1/attendance")
+	attendanceGroup := r.Group("/api/v1/attendance").Use(middleware.Secured())
 	{
 		attendanceGroup.POST("/checkin", handler.CheckIn)
 		attendanceGroup.POST("/checkout", handler.CheckOut)

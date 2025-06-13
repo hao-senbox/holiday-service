@@ -2,9 +2,11 @@ package leave
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"worktime-service/internal/user"
 	"time"
+	"worktime-service/internal/user"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -20,8 +22,8 @@ type LeaveService interface {
 	DeleteRequestLeave(ctx context.Context, req *DeleteLeaveRequest) error
 	UpdateRequestLeave(ctx context.Context, req *UpdateRequest, id string) error
 	GetStatistical(ctx context.Context, dateFrom string, dateTo string) (*LeaveStatistical, error)
-	AddCronLeavesBalance(ctx context.Context) error
-	GetLeaveBalanceUser(ctx context.Context, userID string) (interface{}, error)
+	// AddCronLeavesBalance(ctx context.Context) error
+	// GetLeaveBalanceUser(ctx context.Context, userID string) (interface{}, error)
 }
 
 type leaveService struct {
@@ -39,14 +41,14 @@ func NewLeaveService(leaveRepository LeaveRepository, userService user.UserServi
 func (s *leaveService) CreateRequestLeave(ctx context.Context, req *CreateLeaveRequest) error {
 
 	if req.UserID == "" {
-		fmt.Printf("User ID is empty\n")
+		return errors.New("user ID is empty")
 	}
 
 	if req.LeaveDate == "" {
-		fmt.Printf("Leave date is empty\n")
+		return errors.New("leave date is empty")
 	}
 
-	user, err := s.userService.GetUserInfor(req.UserID)
+	user, err := s.userService.GetUserInfor(ctx, req.UserID)
 	if err != nil {
 		return err
 	}
@@ -358,100 +360,100 @@ func caculateStatistical(leaves []*LeaveRequests) *LeaveStatistical {
 	return stats
 }
 
-func (s *leaveService) GetLeaveBalanceUser(ctx context.Context, userID string) (interface{}, error) {
+// func (s *leaveService) GetLeaveBalanceUser(ctx context.Context, userID string) (interface{}, error) {
 	
-	data, err := s.userService.GetAllUser()
-	if err != nil {
-		return nil, err
-	}
+// 	data, err := s.userService.GetAllUser()
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return data, nil
-}
+// 	return data, nil
+// }
 
-func (s *leaveService) AddCronLeavesBalance(ctx context.Context) error {
+// func (s *leaveService) AddCronLeavesBalance(ctx context.Context) error {
 
-	dataUser, err := s.userService.GetAllUser()
-	if err != nil {
-		return err
-	}
+// 	dataUser, err := s.userService.GetAllUser()
+// 	if err != nil {
+// 		return err
+// 	}
 
-	dataLeavesBanlance, err := s.leaveRepository.GetAllLeaveBalance(ctx)
-	if err != nil {
-		return err
-	}
+// 	dataLeavesBanlance, err := s.leaveRepository.GetAllLeaveBalance(ctx)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	balanceMap := make(map[string]*UserLeaveBalance)
-	currentYear := time.Now().Year()
+// 	balanceMap := make(map[string]*UserLeaveBalance)
+// 	currentYear := time.Now().Year()
 
-	for i := range dataLeavesBanlance {
-		key := fmt.Sprintf("%s_%d", dataLeavesBanlance[i].UserID, currentYear)
-		balanceMap[key] = dataLeavesBanlance[i]
-	}
+// 	for i := range dataLeavesBanlance {
+// 		key := fmt.Sprintf("%s_%d", dataLeavesBanlance[i].UserID, currentYear)
+// 		balanceMap[key] = dataLeavesBanlance[i]
+// 	}
 
-	var newBalance []*UserLeaveBalance
-	var updateBalance []UserLeaveBalance
-	var transaction []LeaveTransaction
+// 	var newBalance []*UserLeaveBalance
+// 	var updateBalance []UserLeaveBalance
+// 	var transaction []LeaveTransaction
 
-	for _, item := range dataUser {
+// 	for _, item := range dataUser {
 
-		key := fmt.Sprintf("%s_%d", item.UserID, currentYear)
+// 		key := fmt.Sprintf("%s_%d", item.UserID, currentYear)
 
-		if existingBalance, ok := balanceMap[key]; ok {
+// 		if existingBalance, ok := balanceMap[key]; ok {
 
-			existingBalance.TotalLeaveBanlance += 1
-			existingBalance.RemaindingLeave += 1
-			existingBalance.LastUpdated = time.Now()
+// 			existingBalance.TotalLeaveBanlance += 1
+// 			existingBalance.RemaindingLeave += 1
+// 			existingBalance.LastUpdated = time.Now()
 
-			updateBalance = append(updateBalance, *existingBalance)
+// 			updateBalance = append(updateBalance, *existingBalance)
 
-		} else {
+// 		} else {
 
-			newBalance = append(newBalance, &UserLeaveBalance{
-				ID:                 primitive.NewObjectID(),
-				UserID:             item.UserID,
-				Year:               currentYear,
-				TotalLeaveBanlance: 1,
-				UsedLeave:          0,
-				RemaindingLeave:    1,
-				LastUpdated:        time.Now(),
-			})
+// 			newBalance = append(newBalance, &UserLeaveBalance{
+// 				ID:                 primitive.NewObjectID(),
+// 				UserID:             item.UserID,
+// 				Year:               currentYear,
+// 				TotalLeaveBanlance: 1,
+// 				UsedLeave:          0,
+// 				RemaindingLeave:    1,
+// 				LastUpdated:        time.Now(),
+// 			})
 
-			reason := fmt.Sprintf("Monthly earned leave - %s", time.Now().Format("2006-01"))
+// 			reason := fmt.Sprintf("Monthly earned leave - %s", time.Now().Format("2006-01"))
 
-			transaction = append(transaction, LeaveTransaction{
-				ID:              primitive.NewObjectID(),
-				UserID:          item.UserID,
-				TransactionType: "EARNED",
-				Date:            time.Now(),
-				Reason:          &reason,
-				CreatedAt:       time.Now(),
-				UpdatedAt:       time.Now(),
-			})
+// 			transaction = append(transaction, LeaveTransaction{
+// 				ID:              primitive.NewObjectID(),
+// 				UserID:          item.UserID,
+// 				TransactionType: "EARNED",
+// 				Date:            time.Now(),
+// 				Reason:          &reason,
+// 				CreatedAt:       time.Now(),
+// 				UpdatedAt:       time.Now(),
+// 			})
 
-		}
-	}
+// 		}
+// 	}
 
-	if len(newBalance) > 0 {
-		err = s.leaveRepository.CreateLeaveBalance(ctx, newBalance)
-		if err != nil {
-			return err
-		}
-	}
+// 	if len(newBalance) > 0 {
+// 		err = s.leaveRepository.CreateLeaveBalance(ctx, newBalance)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
 
-	// if len(updateBalance) > 0 {
-	// 	err = s.leaveRepository.UpdateLeaveBalance(ctx, updateBalance)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
+// 	if len(updateBalance) > 0 {
+// 		err = s.leaveRepository.UpdateLeaveBalance(ctx, updateBalance)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
 
-	// if len(transaction) > 0 {
-	// 	err = s.leaveRepository.CreateLeaveTransaction(ctx, transaction)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
+// 	if len(transaction) > 0 {
+// 		err = s.leaveRepository.CreateLeaveTransaction(ctx, transaction)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
 
-	return nil
+// 	return nil
 
-}
+// }

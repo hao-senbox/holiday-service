@@ -1,7 +1,10 @@
 package attendance
 
 import (
+	"context"
+	"fmt"
 	"worktime-service/helper"
+	"worktime-service/pkg/constants"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,7 +28,23 @@ func (h *AttendanceHandler)  CheckIn(c *gin.Context) {
 		return
 	}
 
-	err := h.service.CheckIn(c, &req)
+	userID, exists := c.Get(constants.UserID)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("user_id not found"), helper.ErrInvalidRequest)
+		return
+	}
+
+	req.UserID = userID.(string)
+
+	token, exists := c.Get(constants.Token)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("token not found"), helper.ErrInvalidRequest)
+		return
+	}
+	
+	ctx := context.WithValue(c, constants.TokenKey, token)
+
+	err := h.service.CheckIn(ctx, &req)
 	if err != nil {
 		helper.SendError(c, 400, err, helper.ErrInvalidRequest)
 		return
@@ -44,7 +63,23 @@ func (h *AttendanceHandler) CheckOut(c *gin.Context) {
 		return
 	}
 
-	err := h.service.CheckOut(c, &req)
+	userID, exists := c.Get(constants.UserID)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("user_id not found"), helper.ErrInvalidRequest)
+		return
+	}
+
+	req.UserID = userID.(string)
+
+	token, exists := c.Get(constants.Token)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("token not found"), helper.ErrInvalidRequest)
+		return
+	}
+	
+	ctx := context.WithValue(c, constants.TokenKey, token)
+
+	err := h.service.CheckOut(ctx, &req)
 	if err != nil {
 		helper.SendError(c, 400, err, helper.ErrInvalidRequest)
 		return
@@ -56,11 +91,26 @@ func (h *AttendanceHandler) CheckOut(c *gin.Context) {
 
 func (h *AttendanceHandler) GetMyAttendance(c *gin.Context) {
 
-	userID := c.Query("user-id")
 	month := c.Query("month")
 	year := c.Query("year")
 
-	data, err := h.service.GetMyAttendance(c, userID, month, year)
+	userID, exists := c.Get(constants.UserID)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("user_id not found"), helper.ErrInvalidRequest)
+		return
+	}
+
+	UserIDToken := userID.(string)
+
+	token, exists := c.Get(constants.Token)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("token not found"), helper.ErrInvalidRequest)
+		return
+	}
+	
+	ctx := context.WithValue(c, constants.TokenKey, token)
+
+	data, err := h.service.GetMyAttendance(ctx, UserIDToken, month, year)
 	
 	if err != nil {
 		helper.SendError(c, 400, err, helper.ErrInvalidRequest)

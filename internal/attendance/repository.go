@@ -40,7 +40,7 @@ func (r *attendanceRepository) existingDailyAttendance(c context.Context, userID
 
 	filter := bson.M{
 		"user_id": userID,
-		"check_in_time": bson.M{
+		"date": bson.M{
 			"$gte": startOfDay,
 			"$lt":  endOfDay,
 		},
@@ -73,7 +73,7 @@ func (r *attendanceRepository) UpdatedDailyAttendance(c context.Context, userID 
 
 	filter := bson.M{
 		"user_id": userID,
-		"check_in_time": bson.M{
+		"date": bson.M{
 			"$gte": startOfDay,
 			"$lt":  endOfDay,
 		},
@@ -101,14 +101,14 @@ func (r *attendanceRepository) GetMyAttendance(c context.Context, userID string,
 
 	filter := bson.M{
 		"user_id": userID,
-		"created_at": bson.M{
+		"date": bson.M{
 			"$gte": firstDay,
 			"$lt":  lastDay,
 		},
 	}
 
 	findOptions := options.Find()
-	findOptions.SetSort(bson.M{"check_in_time": 1})
+	findOptions.SetSort(bson.M{"date": 1})
 
 	cursor, err := r.collectionDailyAttendance.Find(c, filter, findOptions)
 	if err != nil {
