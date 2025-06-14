@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
 	"os"
 	"time"
 	"worktime-service/config"
@@ -73,11 +72,11 @@ func main() {
 
 	r := gin.Default()
 
-	r.LoadHTMLGlob("web/*")
+	// r.LoadHTMLGlob("web/*")
 
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", gin.H{})
-	})
+	// r.GET("/", func(c *gin.Context) {
+	// 	c.HTML(http.StatusOK, "index.html", gin.H{})
+	// })
 
 	leave.RegisterRoutes(r, leaveHandler)
 	attendance.RegisterRoutes(r, attendanceHandler)
