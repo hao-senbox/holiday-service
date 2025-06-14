@@ -1,0 +1,16 @@
+POST    /api/v1/attendance/checkin
+POST    /api/v1/attendance/checkout
+GET     /api/v1/attendance/my-attendance
+
+POST    /api/v1/leave
+DELETE  /api/v1/leave/delete-request
+GET     /api/v1/leave/my-request
+GET     /api/v1/leave/pending-request
+PUT     /api/v1/leave/:id
+GET     /api/v1/leave/statistical
+GET     /api/v1/leave/calendar
+GET     /api/v1/leave/calendar/:id
+PUT     /api/v1/leave/calendar/:id
+GET     /api/v1/leave/setting
+PUT     /api/v1/leave/setting/:id
+
