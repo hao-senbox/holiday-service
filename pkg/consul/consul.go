@@ -5,18 +5,19 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"worktime-service/config"
-	"worktime-service/pkg/zap"
 	"strconv"
 	"time"
+	"worktime-service/config"
+	"worktime-service/pkg/zap"
+
 	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/consul/api/watch"
 )
 
 const (
-	serviceName = "chat-service"
+	serviceName = "holiday-service"
 	ttl         = time.Second * 15
-	checkId     = "chat-service-health-check"
+	checkId     = "holiday-service-health-check"
 )
 
 var (
@@ -107,7 +108,7 @@ func (c *service) setupConsul() {
 		Name:    serviceName, // Service name
 		Port:    port,        // Service port
 		Address: hostname,    // Service address
-		Tags:    []string{"go", "chat-service"},
+		Tags:    []string{"go", "holiday-service"},
 		Check:   check,
 	}
 
