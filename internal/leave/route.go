@@ -10,7 +10,7 @@ func RegisterRoutes(r *gin.Engine, handler *LeaveHandler) {
 	
 	{	leaveGroup := r.Group("/api/v1/leave").Use(middleware.Secured())
 
-		leaveGroup.POST("/", handler.CreateRequestLeave)
+		leaveGroup.POST("", handler.CreateRequestLeave)
 		leaveGroup.DELETE("/delete-request", handler.DeleteRequestLeave)
 		leaveGroup.GET("/my-request", handler.GetMyRequest)
 		leaveGroup.GET("pending-request", handler.GetPendingRequest)
