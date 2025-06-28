@@ -350,6 +350,7 @@ func (r *leaveRepository) GetPendingRequest(ctx context.Context) ([]*LeaveReques
 func (r *leaveRepository) DeleteRequestLeave(ctx context.Context, date *time.Time, userID string) error {
 
 	var leaveRequests LeaveRequests
+	var dailyLeaveSlot DailyLeaveSolt
 	leaveFilter := bson.M{"leave_date": date, "user_id": userID}
 
 	err := r.collectionLeave.FindOneAndDelete(ctx, leaveFilter).Decode(&leaveRequests)
@@ -382,6 +383,18 @@ func (r *leaveRepository) DeleteRequestLeave(ctx context.Context, date *time.Tim
 	_, err = r.collectionDailyLeaveSlots.UpdateOne(ctx, slotFilter, update)
 	if err != nil {
 		return err
+	}
+
+	err = r.collectionDailyLeaveSlots.FindOne(ctx, slotFilter).Decode(&dailyLeaveSlot)
+	if err != nil {
+		return err
+	}
+
+	if len(dailyLeaveSlot.ConfirmedLeaves) == 0 && len(dailyLeaveSlot.PendingRequests) == 0 {
+		_, err := r.collectionDailyLeaveSlots.DeleteOne(ctx, slotFilter)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
