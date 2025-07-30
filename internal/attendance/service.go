@@ -99,22 +99,10 @@ func (s *attendanceService) CheckOut(c context.Context, req *CheckOutRequest) er
 		return fmt.Errorf("user id is required")
 	}
 
-	dataUser, err := s.userService.GetAllUser(c)
+		_, err := s.userService.GetUserInfor(c, req.UserID)
 	if err != nil {
 		return err
-	}
-
-	found := false
-	for _, item := range dataUser {
-		if item.UserID == req.UserID {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return fmt.Errorf("user id not found")
-	}
+	}	
 
 	now := time.Now().Add(7 * time.Hour)
 	today := helper.GetStartOfDay(now)

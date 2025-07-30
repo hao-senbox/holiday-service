@@ -10,13 +10,13 @@ type CheckOutRequest struct {
 	UserID      string `json:"user_id" bson:"user_id"`
 	Emotion     string `json:"emotion" bson:"emotion"`
 	Notes       string `json:"notes" bson:"notes"`
-	DurianLunch int    `json:"durian_lunch" bson:"durian_lunch"`
+	DurianLunch int    `json:"duration_lunch" bson:"duration_lunch"`
 }
 
 type AttendanceStudentRequest struct {
-	UserID    string  `json:"user_id" bson:"user_id"`
-	Types     string  `json:"types" bson:"types"`
-	Notes     string  `json:"note" bson:"note"`
+	UserID    string `json:"user_id" bson:"user_id"`
+	Types     string `json:"types" bson:"types"`
+	Notes     string `json:"note" bson:"note"`
 	Date      string `json:"date" bson:"date"`
-	CreatedBy string  `json:"created_by" bson:"created_by"`
+	CreatedBy string `json:"created_by" bson:"created_by"`
 }
