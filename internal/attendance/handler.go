@@ -93,14 +93,8 @@ func (h *AttendanceHandler) GetMyAttendance(c *gin.Context) {
 
 	month := c.Query("month")
 	year := c.Query("year")
-
-	userID, exists := c.Get(constants.UserID)
-	if !exists {
-		helper.SendError(c, 400, fmt.Errorf("user_id not found"), helper.ErrInvalidRequest)
-		return
-	}
-
-	UserIDToken := userID.(string)
+	userID := c.Query("user-id")
+	
 
 	token, exists := c.Get(constants.Token)
 	if !exists {
@@ -110,7 +104,7 @@ func (h *AttendanceHandler) GetMyAttendance(c *gin.Context) {
 	
 	ctx := context.WithValue(c, constants.TokenKey, token)
 
-	data, err := h.service.GetMyAttendance(ctx, UserIDToken, month, year)
+	data, err := h.service.GetMyAttendance(ctx, userID, month, year)
 	
 	if err != nil {
 		helper.SendError(c, 400, err, helper.ErrInvalidRequest)

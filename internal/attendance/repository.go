@@ -104,7 +104,7 @@ func (r *attendanceRepository) UpdatedDailyAttendance(c context.Context, userID 
 func (r *attendanceRepository) GetMyAttendance(c context.Context, userID string, firstDay time.Time, lastDay time.Time) ([]*DailyAttendance, error) {
 
 	var dailyAttendances []*DailyAttendance
-
+	fmt.Printf("userID: %s, firstDay: %s, lastDay: %s\n", userID, firstDay, lastDay)
 	filter := bson.M{
 		"user_id": userID,
 		"date": bson.M{
