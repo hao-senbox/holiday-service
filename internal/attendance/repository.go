@@ -17,17 +17,23 @@ type AttendanceRepository interface {
 	existingDailyAttendance(c context.Context, userID string, today time.Time) (*DailyAttendance, error)
 	UpdatedDailyAttendance(c context.Context, userID string, today time.Time, dailyAttendance *DailyAttendance) error
 	GetMyAttendance(c context.Context, userID string, firstDay time.Time, lastDay time.Time) ([]*DailyAttendance, error)
+	existingDailyAttendanceStudent(c context.Context, userID string, today time.Time) (*AttendanceStudent, error)
+	CreateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *AttendanceStudent) error
+	UpdateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *AttendanceStudent) error
+	GetAttendanceStudent(c context.Context, userID string, firstDay time.Time, lastDay time.Time) ([]*AttendanceStudent, error)
 }
 
 type attendanceRepository struct {
-	collectionAttendance      *mongo.Collection
-	collectionDailyAttendance *mongo.Collection
+	collectionAttendance             *mongo.Collection
+	collectionDailyAttendance        *mongo.Collection
+	collectionDailyAttendanceStudent *mongo.Collection
 }
 
-func NewAttendanceRepository(collectionAttendance *mongo.Collection, collectionDailyAttendance *mongo.Collection) AttendanceRepository {
+func NewAttendanceRepository(collectionAttendance *mongo.Collection, collectionDailyAttendance *mongo.Collection, collectionDailyAttendanceStudent *mongo.Collection) AttendanceRepository {
 	return &attendanceRepository{
-		collectionAttendance:      collectionAttendance,
-		collectionDailyAttendance: collectionDailyAttendance,
+		collectionAttendance:             collectionAttendance,
+		collectionDailyAttendance:        collectionDailyAttendance,
+		collectionDailyAttendanceStudent: collectionDailyAttendanceStudent,
 	}
 }
 
@@ -127,4 +133,72 @@ func (r *attendanceRepository) GetMyAttendance(c context.Context, userID string,
 
 	return dailyAttendances, nil
 
+}
+
+func (r *attendanceRepository) existingDailyAttendanceStudent(c context.Context, userID string, today time.Time) (*AttendanceStudent, error) {
+
+	var existingDailyAttendanceStudent AttendanceStudent
+
+	startOfDay := today
+	endOfDay := helper.GetEndOfDay(startOfDay)
+
+	filter := bson.M{
+		"user_id": userID,
+		"date": bson.M{
+			"$gte": startOfDay,
+			"$lt":  endOfDay,
+		},
+	}
+
+	err := r.collectionDailyAttendanceStudent.FindOne(c, filter).Decode(&existingDailyAttendanceStudent)
+
+	if mongo.ErrNoDocuments == err {
+		return nil, nil
+	}
+
+	return &existingDailyAttendanceStudent, nil
+
+}
+
+func (r *attendanceRepository) CreateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *AttendanceStudent) error {
+	_, err := r.collectionDailyAttendanceStudent.InsertOne(c, dailyAttendanceStudent)
+	return err
+}
+
+func (r *attendanceRepository) UpdateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *AttendanceStudent) error {
+	_, err := r.collectionDailyAttendanceStudent.UpdateOne(c, bson.M{"_id": dailyAttendanceStudent.ID}, bson.M{"$set": dailyAttendanceStudent})
+	return err
+}
+
+func (r *attendanceRepository) GetAttendanceStudent(c context.Context, userID string, firstDay time.Time, lastDay time.Time) ([]*AttendanceStudent, error) {
+
+	var dailyAttendances []*AttendanceStudent
+	fmt.Printf("userID: %s, firstDay: %s, lastDay: %s\n", userID, firstDay, lastDay)
+	filter := bson.M{
+		"user_id": userID,
+		"date": bson.M{
+			"$gte": firstDay,
+			"$lt":  lastDay,
+		},
+	}
+
+	findOptions := options.Find()
+	findOptions.SetSort(bson.M{"date": 1})
+
+	cursor, err := r.collectionDailyAttendanceStudent.Find(c, filter, findOptions)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(c)
+
+	err = cursor.All(c, &dailyAttendances)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(dailyAttendances) == 0 {
+		return nil, fmt.Errorf("no attendance records found for user %s", userID)
+	}
+
+	return dailyAttendances, nil
 }

@@ -14,7 +14,9 @@ import (
 type AttendanceService interface {
 	CheckIn(c context.Context, req *CheckInRequest) error
 	CheckOut(c context.Context, req *CheckOutRequest) error
+	AttendanceStudent(c context.Context, req *AttendanceStudentRequest) error
 	GetMyAttendance(c context.Context, userID string, month string, year string) ([]*DailyAttendance, error)
+	GetAttendanceStudent(c context.Context, userID string, month string, year string) ([]*AttendanceStudent, error)
 }
 
 type attendanceService struct {
@@ -35,23 +37,11 @@ func (s *attendanceService) CheckIn(c context.Context, req *CheckInRequest) erro
 		return fmt.Errorf("user id is required")
 	}
 
-	dataUser, err := s.userService.GetAllUser(c)
+	_, err := s.userService.GetUserInfor(c, req.UserID)
 	if err != nil {
 		return err
-	}
+	}	
 
-	found := false
-	for _, item := range dataUser {
-		fmt.Printf("Checking user: %v\n", item.UserID)
-		if item.UserID == req.UserID {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return fmt.Errorf("user id not found")
-	}
 
 	now := time.Now()
 	today := helper.GetStartOfDay(now)
@@ -62,7 +52,6 @@ func (s *attendanceService) CheckIn(c context.Context, req *CheckInRequest) erro
 			return fmt.Errorf("user has already checked in today")
 		}
 	} else {
-		fmt.Printf("User has not checked in today\n")
 		attendanceLog := AttendanceLog{
 			ID:        primitive.NewObjectID(),
 			UserID:    req.UserID,
@@ -70,7 +59,7 @@ func (s *attendanceService) CheckIn(c context.Context, req *CheckInRequest) erro
 			LogTime:   now,
 			LogType:   "check_in",
 			Emotion:   req.Emotion,
-			Notes:     req.Notes,
+			Notes:     &req.Notes,
 			CreatedAt: now,
 			UpdatedAt: now,
 		}
@@ -148,7 +137,7 @@ func (s *attendanceService) CheckOut(c context.Context, req *CheckOutRequest) er
 		LogTime:   now,
 		LogType:   "check_out",
 		Emotion:   req.Emotion,
-		Notes:     req.Notes,
+		Notes:     &req.Notes,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -270,4 +259,171 @@ func (s *attendanceService) getMonthlyAttandance(myAttedances []*DailyAttendance
 	}
 
 	return dataMonthly, nil
+}
+
+func (s *attendanceService) AttendanceStudent(c context.Context, req *AttendanceStudentRequest) error {
+	
+	if req.UserID == "" {
+		return fmt.Errorf("user id is required")
+	}
+
+	if req.Types == "" {
+		return fmt.Errorf("types is required")
+	}
+
+	now := time.Now()
+	today := helper.GetStartOfDay(now)
+
+	switch req.Types {
+	case "arrive":
+		result, _ := s.repo.existingDailyAttendanceStudent(c, req.UserID, today)
+		if result != nil {
+			if result.CheckInTime != nil {
+				return fmt.Errorf("student has already checked in today")
+			}
+
+			result.CheckInTime = &now
+			result.UpdatedAt = now
+
+			if err := s.repo.UpdateDailyAttendanceStudent(c, result); err != nil {
+				return err
+			}
+		} else {
+			if err := s.repo.CreateAttendanceLog(c, &AttendanceLog{
+				ID:        primitive.NewObjectID(),
+				UserID:    req.UserID,
+				LogDate:   today,
+				LogTime:   now,
+				LogType:   "arrive",
+				Notes:     &req.Notes,
+				CreatedBy: &req.CreatedBy,
+				CreatedAt: now,
+				UpdatedAt: now,
+			}); err != nil {
+				return err
+			}
+
+			if err := s.repo.CreateDailyAttendanceStudent(c, &AttendanceStudent{
+				ID:          primitive.NewObjectID(),
+				UserID:      req.UserID,
+				DayOfWeek:   today.Weekday(),
+				Date:        today,
+				CheckInTime: &now,
+				Types:       req.Types,
+				Note:        req.Notes,
+				CreatedBy:   req.CreatedBy,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}); err != nil {
+				return err
+			}
+		}
+
+	case "leave":
+		result, _ := s.repo.existingDailyAttendanceStudent(c, req.UserID, today)
+		if result == nil {
+			return fmt.Errorf("student has not checked in today")
+		}
+
+		if result.CheckOutTime != nil {
+			return fmt.Errorf("student has already checked out today")
+		}
+
+		if result.CheckInTime == nil {
+			return fmt.Errorf("student has not checked in today")
+		}
+
+		if err := s.repo.CreateAttendanceLog(c, &AttendanceLog{
+			ID:        primitive.NewObjectID(),
+			UserID:    req.UserID,
+			LogDate:   today,
+			LogTime:   now,
+			LogType:   "leave",
+			Notes:     &req.Notes,
+			CreatedBy: &req.CreatedBy,
+			CreatedAt: now,
+			UpdatedAt: now,
+		}); err != nil {
+			return err
+		}
+
+		result.CheckOutTime = &now
+		result.UpdatedAt = now
+
+		if err := s.repo.UpdateDailyAttendanceStudent(c, result); err != nil {
+			return err
+		}
+
+	case "absent":
+		if req.Date == "" {
+			return fmt.Errorf("date is required for absent")
+		}
+
+		dateParse, err := time.Parse("2006-01-02", req.Date)
+		if err != nil {
+			return fmt.Errorf("invalid date format, must be YYYY-MM-DD")
+		}
+
+		if err := s.repo.CreateAttendanceLog(c, &AttendanceLog{
+			ID:        primitive.NewObjectID(),
+			UserID:    req.UserID,
+			LogDate:   dateParse,
+			LogTime:   now,
+			LogType:   "absent",
+			Notes:     &req.Notes,
+			CreatedBy: &req.CreatedBy,
+			CreatedAt: now,
+			UpdatedAt: now,
+		}); err != nil {
+			return err
+		}
+
+		if err := s.repo.CreateDailyAttendanceStudent(c, &AttendanceStudent{
+			ID:           primitive.NewObjectID(),
+			UserID:       req.UserID,
+			DayOfWeek:    dateParse.Weekday(),
+			Date:         dateParse,
+			CheckInTime:  nil,
+			CheckOutTime: nil,
+			Types:        req.Types,
+			Note:         req.Notes,
+			CreatedBy:    req.CreatedBy,
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		}); err != nil {
+			return err
+		}
+
+	default:
+		return fmt.Errorf("invalid type, must be arrive, leave, or absent")
+	}
+
+	return nil
+}
+
+func (s *attendanceService) GetAttendanceStudent(c context.Context, userID string, month string, year string) ([]*AttendanceStudent, error){
+
+	monthInt, err := strconv.Atoi(month)
+	if err != nil {
+		return nil, err
+	}
+
+	if monthInt < 1 || monthInt > 12 {
+		return nil, fmt.Errorf("invalid month")
+	}
+
+	yearInt, err := strconv.Atoi(year)
+	if err != nil {
+		return nil, err
+	}
+
+	firstDay := time.Date(yearInt, time.Month(monthInt), 1, 0, 0, 0, 0, time.UTC)
+	lastDay := firstDay.AddDate(0, 1, -1)
+
+	data, err := s.repo.GetAttendanceStudent(c, userID, firstDay, lastDay)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }

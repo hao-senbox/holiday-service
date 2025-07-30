@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
-	"log"	
+	"log"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 	"worktime-service/config"
 	"worktime-service/internal/attendance"
@@ -12,7 +14,6 @@ import (
 	"worktime-service/pkg/consul"
 	"worktime-service/pkg/zap"
 
-	// cronV3 "github.com/robfig/cron/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,7 +22,7 @@ import (
 )
 
 func main() {
-
+	// Load env
 	if _, err := os.Stat(".env"); err == nil {
 		if err := godotenv.Load(); err != nil {
 			log.Printf("Warning: Error loading .env file: %v", err)
@@ -52,7 +53,17 @@ func main() {
 
 	consulConn := consul.NewConsulConn(logger, cfg)
 	consulClient := consulConn.Connect()
-	defer consulConn.Deregister()
+
+	// Handle OS signal để deregister
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-quit
+		log.Println("Shutting down server... De-registering from Consul...")
+		consulConn.Deregister()
+		os.Exit(0)
+	}()
 
 	settingCollection := mongoClient.Database(cfg.MongoDB).Collection("settings")
 	leaveRequestCollection := mongoClient.Database(cfg.MongoDB).Collection("leave_requests")
@@ -60,9 +71,9 @@ func main() {
 	leaveBalanceCollection := mongoClient.Database(cfg.MongoDB).Collection("leave_balance")
 	attendanceCollection := mongoClient.Database(cfg.MongoDB).Collection("attendance_logs")
 	attendanceDailyCollection := mongoClient.Database(cfg.MongoDB).Collection("attendances_daily")
-	
+	attendanceDailyStudentCollection := mongoClient.Database(cfg.MongoDB).Collection("attendances_daily_students")
 	userService := user.NewUserService(consulClient)
-	attendanceRepository := attendance.NewAttendanceRepository(attendanceCollection, attendanceDailyCollection)
+	attendanceRepository := attendance.NewAttendanceRepository(attendanceCollection, attendanceDailyCollection, attendanceDailyStudentCollection)
 	attendanceService := attendance.NewAttendanceService(attendanceRepository, userService)
 	attendanceHandler := attendance.NewAttendanceHandler(attendanceService)
 
@@ -72,34 +83,8 @@ func main() {
 
 	r := gin.Default()
 
-	// r.LoadHTMLGlob("web/*")
-
-	// r.GET("/", func(c *gin.Context) {
-	// 	c.HTML(http.StatusOK, "index.html", gin.H{})
-	// })
-
 	leave.RegisterRoutes(r, leaveHandler)
 	attendance.RegisterRoutes(r, attendanceHandler)
-
-	// c := cronV3.New(cronV3.WithSeconds(), cronV3.WithLogger(cronV3.DefaultLogger))
-
-	// _, err = c.AddFunc("*/30 * * * * *", func() {
-
-	// 	log.Println("Bắt đầu chạy job...")
-	// 	ctx := context.Background()
-
-	// 	if err := leaveService.AddCronLeavesBalance(ctx); err != nil {
-	// 		log.Printf("Lỗi khi thêm ngày nghỉ cho user %v", err)
-	// 	}
-
-	// })
-
-	// if err != nil {
-	// 	log.Printf("Lỗi khi thiết lập cron job: %v", err)
-	// } else {
-	// 	c.Start()
-	// 	log.Println("Cron job đã được khởi động")
-	// }
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -107,8 +92,9 @@ func main() {
 	}
 
 	log.Printf("Server starting on port %s", port)
-	r.Run(":" + port)
-
+	if err := r.Run(":" + port); err != nil {
+		log.Fatalf("Server stopped with error: %v", err)
+	}
 }
 
 func connectToMongoDB(uri string) (*mongo.Client, error) {
@@ -122,12 +108,10 @@ func connectToMongoDB(uri string) (*mongo.Client, error) {
 	}
 
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
-		log.Println("Failed to ping to MongoDB")
+		log.Println("Failed to ping MongoDB")
 		return nil, err
 	}
 
 	log.Println("Successfully connected to MongoDB")
 	return client, nil
 }
-
-

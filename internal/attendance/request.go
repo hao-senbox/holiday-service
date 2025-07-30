@@ -12,3 +12,11 @@ type CheckOutRequest struct {
 	Notes       string `json:"notes" bson:"notes"`
 	DurianLunch int    `json:"durian_lunch" bson:"durian_lunch"`
 }
+
+type AttendanceStudentRequest struct {
+	UserID    string  `json:"user_id" bson:"user_id"`
+	Types     string  `json:"types" bson:"types"`
+	Notes     string  `json:"note" bson:"note"`
+	Date      string `json:"date" bson:"date"`
+	CreatedBy string  `json:"created_by" bson:"created_by"`
+}

@@ -190,7 +190,7 @@ func (c *callAPI) GetAllUser(token string) []map[string]interface{} {
 		fmt.Printf("Error calling API: %v\n", err)
 		return nil
 	}
-
+	fmt.Printf("parse: %v\n", parse)
 	dataListRaw, ok := parse["data"].([]interface{})
 	if !ok {
 		fmt.Printf("Error calling API: %v\n", err)

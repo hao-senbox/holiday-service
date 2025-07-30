@@ -12,7 +12,8 @@ type AttendanceLog struct {
 	LogTime   time.Time          `json:"log_time" bson:"log_time"`
 	LogType   string             `json:"log_type" bson:"log_type"`
 	Emotion   string             `json:"emotion" bson:"emotion"`
-	Notes     string             `json:"notes" bson:"notes"`
+	Notes     *string            `json:"notes" bson:"notes"`
+	CreatedBy *string            `json:"created_by" bson:"created_by"`
 	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
 	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
 }
@@ -32,4 +33,18 @@ type DailyAttendance struct {
 	TotalWorkingHours float64            `json:"total_working_hours" bson:"total_working_hours"`
 	CreatedAt         time.Time          `json:"created_at" bson:"created_at"`
 	UpdatedAt         time.Time          `json:"updated_at" bson:"updated_at"`
+}
+
+type AttendanceStudent struct {
+	ID           primitive.ObjectID `json:"id" bson:"_id"`
+	UserID       string             `json:"user_id" bson:"user_id"`
+	DayOfWeek    time.Weekday       `json:"day_of_week" bson:"day_of_week"`
+	Date         time.Time          `json:"date" bson:"date"`
+	CheckInTime  *time.Time         `json:"check_in_time" bson:"check_in_time"`
+	CheckOutTime *time.Time         `json:"check_out_time" bson:"check_out_time"`
+	Types        string             `json:"types" bson:"types"`
+	Note         string             `json:"note" bson:"note"`
+	CreatedBy    string             `json:"created_by" bson:"created_by"`
+	CreatedAt    time.Time          `json:"created_at" bson:"created_at"`
+	UpdatedAt    time.Time          `json:"updated_at" bson:"updated_at"`
 }
