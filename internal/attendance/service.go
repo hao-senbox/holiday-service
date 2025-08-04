@@ -104,7 +104,7 @@ func (s *attendanceService) CheckOut(c context.Context, req *CheckOutRequest) er
 		return err
 	}	
 
-	now := time.Now().Add(7 * time.Hour)
+	now := time.Now()
 	today := helper.GetStartOfDay(now)
 
 	result, err := s.repo.existingDailyAttendance(c, req.UserID, today)
