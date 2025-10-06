@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -15,6 +16,7 @@ import (
 	"worktime-service/pkg/zap"
 
 	"github.com/gin-gonic/gin"
+	consulapi "github.com/hashicorp/consul/api"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -40,9 +42,17 @@ func main() {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
 
+	consulConn := consul.NewConsulConn(logger, cfg)
+	consulClient := consulConn.Connect()
+	defer consulConn.Deregister()
+	
 	mongoClient, err := connectToMongoDB(cfg.MongoURI)
 	if err != nil {
 		panic(err)
+	}
+
+	if err := waitPassing(consulClient, "go-main-service", 60*time.Second); err != nil {
+		logger.Fatalf("Dependency not ready: %v", err)
 	}
 
 	defer func() {
@@ -50,9 +60,6 @@ func main() {
 			panic(err)
 		}
 	}()
-
-	consulConn := consul.NewConsulConn(logger, cfg)
-	consulClient := consulConn.Connect()
 
 	// Handle OS signal để deregister
 	quit := make(chan os.Signal, 1)
@@ -114,4 +121,16 @@ func connectToMongoDB(uri string) (*mongo.Client, error) {
 
 	log.Println("Successfully connected to MongoDB")
 	return client, nil
+}
+
+func waitPassing(cli *consulapi.Client, name string, timeout time.Duration) error {
+	dl := time.Now().Add(timeout)
+	for time.Now().Before(dl) {
+		entries, _, err := cli.Health().Service(name, "", true, nil)
+		if err == nil && len(entries) > 0 {
+			return nil // đã sẵn sàng
+		}
+		time.Sleep(2 * time.Second)
+	}
+	return fmt.Errorf("%s not ready in consul", name)
 }
