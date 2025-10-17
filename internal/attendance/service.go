@@ -454,8 +454,8 @@ func (s *attendanceService) GetAllAttendances(c context.Context, userID string, 
 			EMotionCheckOut:   attendance.EMotionCheckOut,
 			PercentWorkDay:    attendance.PercentWorkDay,
 			TotalWorkingHours: attendance.TotalWorkingHours,
-			CreatedAt:         attendance.CreatedAt.Add(time.Hour * 7).Format("15:04:05"),
-			UpdatedAt:         attendance.UpdatedAt.Add(time.Hour * 7).Format("15:04:05"),
+			CreatedAt:         formatTimePtr(&attendance.CreatedAt),
+			UpdatedAt:         formatTimePtr(&attendance.UpdatedAt),
 		})
 	}
 
@@ -477,5 +477,5 @@ func formatTimePtr(t *time.Time) string {
 	if t == nil {
 		return ""
 	}
-	return t.Add(7 * time.Hour).Format("15:04:05")
+	return t.Add(7 * time.Hour).Format("2006-01-02 15:04:05")
 }
