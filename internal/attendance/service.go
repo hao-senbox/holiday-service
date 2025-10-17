@@ -442,33 +442,40 @@ func (s *attendanceService) GetAllAttendances(c context.Context, userID string, 
 		}
 
 		data = append(data, &DailyAttendanceUser{
-			ID:        attendance.ID.Hex(),
-			UserInfor: user,
-			DayOfWeek: attendance.DayOfWeek,
-			Date:      attendance.Date,
-			Status:    attendance.Status,
-			CheckInTime: attendance.CheckInTime,
-			EmotionCheckIn: attendance.EmotionCheckIn,
-			CheckoutTime: attendance.CheckoutTime,
-			LunchDuration: attendance.LunchDuration,
-			EMotionCheckOut: attendance.EMotionCheckOut,
-			PercentWorkDay: attendance.PercentWorkDay,
+			ID:                attendance.ID.Hex(),
+			UserInfor:         user,
+			DayOfWeek:         attendance.DayOfWeek,
+			Date:              attendance.Date,
+			Status:            attendance.Status,
+			CheckInTime:       formatTimePtr(attendance.CheckInTime),
+			EmotionCheckIn:    attendance.EmotionCheckIn,
+			CheckoutTime:      formatTimePtr(attendance.CheckoutTime),
+			LunchDuration:     attendance.LunchDuration,
+			EMotionCheckOut:   attendance.EMotionCheckOut,
+			PercentWorkDay:    attendance.PercentWorkDay,
 			TotalWorkingHours: attendance.TotalWorkingHours,
-			CreatedAt: attendance.CreatedAt,
-			UpdatedAt: attendance.UpdatedAt,
+			CreatedAt:         attendance.CreatedAt.Add(time.Hour * 7).Format("15:04:05"),
+			UpdatedAt:         attendance.UpdatedAt.Add(time.Hour * 7).Format("15:04:05"),
 		})
 	}
 
 	paginate := Pagination{
 		TotalCount: totalCount,
 		TotalPages: totalPages,
-		Page: int64(page),
-		Limit: int64(limit),
+		Page:       int64(page),
+		Limit:      int64(limit),
 	}
 
 	return &DailyAttendanceResponsePagination{
-		Pagination: paginate,
-		DailyAttendance:       data,
+		Pagination:      paginate,
+		DailyAttendance: data,
 	}, nil
 
+}
+
+func formatTimePtr(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.Add(7 * time.Hour).Format("15:04:05")
 }
