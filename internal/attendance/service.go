@@ -435,15 +435,27 @@ func (s *attendanceService) GetAllAttendances(c context.Context, userID string, 
 
 	totalPages := (totalCount + int64(limit) - 1) / int64(limit)
 	var data []*DailyAttendanceUser
+
+	userCache := make(map[string]*user.UserInfor)
 	for _, attendance := range attendances {
-		user, err := s.userService.GetUserInfor(c, attendance.UserID)
-		if err != nil {
-			log.Println("Failed to get user information:", err)
+
+		var userInfo *user.UserInfor
+		if attendance.UserID != "" {
+			if cached, ok := userCache[attendance.UserID]; ok {
+				userInfo = cached
+			} else {
+				user, err := s.userService.GetUserInfor(c, attendance.UserID)
+				if err != nil {
+					log.Println("Failed to get user information:", err)
+				}
+				userCache[attendance.UserID] = user
+				userInfo = user
+			}
 		}
 
 		data = append(data, &DailyAttendanceUser{
 			ID:                attendance.ID.Hex(),
-			UserInfor:         user,
+			UserInfor:         userInfo,
 			DayOfWeek:         attendance.DayOfWeek,
 			Date:              attendance.Date,
 			Status:            attendance.Status,
