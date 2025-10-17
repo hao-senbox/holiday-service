@@ -13,6 +13,7 @@ func RegisterRoutes(r *gin.Engine, handler *AttendanceHandler) {
 		attendanceGroup.POST("/checkin", handler.CheckIn)
 		attendanceGroup.POST("/checkout", handler.CheckOut)
 		attendanceGroup.GET("/my-attendance", handler.GetMyAttendance)
+		attendanceGroup.GET("", handler.GetAllAttendances)
 		attendanceGroup.POST("/student", handler.AttendanceStudent)
 		attendanceGroup.GET("/student", handler.GetMyAttendanceStudent)
 	}

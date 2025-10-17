@@ -1,6 +1,9 @@
 package attendance
 
-import "worktime-service/internal/user"
+import (
+	"time"
+	"worktime-service/internal/user"
+)
 
 type DailyAttendanceResponse struct {
 	Date              string  `json:"date"`
@@ -30,4 +33,33 @@ type MonthlySummary struct {
 	LeaveDays      float64 `json:"leave_days"`
 	AbsentDays     int     `json:"absent_days"`
 	TotalWorkHours float64 `json:"total_work_hours"`
+}
+
+type DailyAttendanceResponsePagination struct {
+	DailyAttendance []*DailyAttendanceUser `json:"daily_attendance"`
+	Pagination      Pagination             `json:"pagination"`
+}
+
+type DailyAttendanceUser struct {
+	ID                string          `json:"id" bson:"_id"`
+	UserInfor         *user.UserInfor `json:"user_infor" bson:"user_infor"`
+	DayOfWeek         time.Weekday    `json:"day_of_week" bson:"day_of_week"`
+	Date              time.Time       `json:"date" bson:"date"`
+	Status            string          `json:"status" bson:"status"`
+	CheckInTime       *time.Time      `json:"check_in_time" bson:"check_in_time"`
+	EmotionCheckIn    string          `json:"emotion_check_in" bson:"emotion_check_in"`
+	CheckoutTime      *time.Time      `json:"check_out_time" bson:"check_out_time"`
+	LunchDuration     int             `json:"lunch_duration" bson:"lunch_duration"`
+	EMotionCheckOut   string          `json:"emotion_check_out" bson:"emotion_check_out"`
+	PercentWorkDay    float64         `json:"percent_work_day" bson:"percent_work_day"`
+	TotalWorkingHours float64         `json:"total_working_hours" bson:"total_working_hours"`
+	CreatedAt         time.Time       `json:"created_at" bson:"created_at"`
+	UpdatedAt         time.Time       `json:"updated_at" bson:"updated_at"`
+}
+
+type Pagination struct {
+	TotalCount int64 `json:"total_count"`
+	TotalPages int64 `json:"total_pages"`
+	Page       int64 `json:"page"`
+	Limit      int64 `json:"limit"`
 }

@@ -3,6 +3,7 @@ package attendance
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 	"worktime-service/helper"
@@ -17,6 +18,7 @@ type AttendanceService interface {
 	AttendanceStudent(c context.Context, req *AttendanceStudentRequest) error
 	GetMyAttendance(c context.Context, userID string, month string, year string) ([]*DailyAttendance, error)
 	GetAttendanceStudent(c context.Context, userID string, month string, year string) ([]*AttendanceStudent, error)
+	GetAllAttendances(c context.Context, userID string, date string, page int, limit int) (*DailyAttendanceResponsePagination, error)
 }
 
 type attendanceService struct {
@@ -40,8 +42,7 @@ func (s *attendanceService) CheckIn(c context.Context, req *CheckInRequest) erro
 	_, err := s.userService.GetUserInfor(c, req.UserID)
 	if err != nil {
 		return err
-	}	
-
+	}
 
 	now := time.Now()
 	today := helper.GetStartOfDay(now)
@@ -99,10 +100,10 @@ func (s *attendanceService) CheckOut(c context.Context, req *CheckOutRequest) er
 		return fmt.Errorf("user id is required")
 	}
 
-		_, err := s.userService.GetUserInfor(c, req.UserID)
+	_, err := s.userService.GetUserInfor(c, req.UserID)
 	if err != nil {
 		return err
-	}	
+	}
 
 	now := time.Now()
 	today := helper.GetStartOfDay(now)
@@ -250,7 +251,7 @@ func (s *attendanceService) getMonthlyAttandance(myAttedances []*DailyAttendance
 }
 
 func (s *attendanceService) AttendanceStudent(c context.Context, req *AttendanceStudentRequest) error {
-	
+
 	if req.UserID == "" {
 		return fmt.Errorf("user id is required")
 	}
@@ -389,7 +390,7 @@ func (s *attendanceService) AttendanceStudent(c context.Context, req *Attendance
 	return nil
 }
 
-func (s *attendanceService) GetAttendanceStudent(c context.Context, userID string, month string, year string) ([]*AttendanceStudent, error){
+func (s *attendanceService) GetAttendanceStudent(c context.Context, userID string, month string, year string) ([]*AttendanceStudent, error) {
 
 	monthInt, err := strconv.Atoi(month)
 	if err != nil {
@@ -414,4 +415,60 @@ func (s *attendanceService) GetAttendanceStudent(c context.Context, userID strin
 	}
 
 	return data, nil
+}
+
+func (s *attendanceService) GetAllAttendances(c context.Context, userID string, date string, page int, limit int) (*DailyAttendanceResponsePagination, error) {
+
+	var dateParse *time.Time
+	if date != "" {
+		t, err := time.Parse("2006-01-02", date)
+		if err != nil {
+			return nil, err
+		}
+		dateParse = &t
+	}
+
+	attendances, totalCount, err := s.repo.GetAllAttendances(c, userID, dateParse, page, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	totalPages := (totalCount + int64(limit) - 1) / int64(limit)
+	var data []*DailyAttendanceUser
+	for _, attendance := range attendances {
+		user, err := s.userService.GetUserInfor(c, attendance.UserID)
+		if err != nil {
+			log.Println("Failed to get user information:", err)
+		}
+
+		data = append(data, &DailyAttendanceUser{
+			ID:        attendance.ID.Hex(),
+			UserInfor: user,
+			DayOfWeek: attendance.DayOfWeek,
+			Date:      attendance.Date,
+			Status:    attendance.Status,
+			CheckInTime: attendance.CheckInTime,
+			EmotionCheckIn: attendance.EmotionCheckIn,
+			CheckoutTime: attendance.CheckoutTime,
+			LunchDuration: attendance.LunchDuration,
+			EMotionCheckOut: attendance.EMotionCheckOut,
+			PercentWorkDay: attendance.PercentWorkDay,
+			TotalWorkingHours: attendance.TotalWorkingHours,
+			CreatedAt: attendance.CreatedAt,
+			UpdatedAt: attendance.UpdatedAt,
+		})
+	}
+
+	paginate := Pagination{
+		TotalCount: totalCount,
+		TotalPages: totalPages,
+		Page: int64(page),
+		Limit: int64(limit),
+	}
+
+	return &DailyAttendanceResponsePagination{
+		Pagination: paginate,
+		DailyAttendance:       data,
+	}, nil
+
 }

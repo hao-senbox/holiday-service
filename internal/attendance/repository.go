@@ -21,6 +21,7 @@ type AttendanceRepository interface {
 	CreateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *AttendanceStudent) error
 	UpdateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *AttendanceStudent) error
 	GetAttendanceStudent(c context.Context, userID string, firstDay time.Time, lastDay time.Time) ([]*AttendanceStudent, error)
+	GetAllAttendances(c context.Context, userID string, date *time.Time, page int, limit int) ([]*DailyAttendance, int64, error)
 }
 
 type attendanceRepository struct {
@@ -201,4 +202,49 @@ func (r *attendanceRepository) GetAttendanceStudent(c context.Context, userID st
 	}
 
 	return dailyAttendances, nil
+}
+
+func (r *attendanceRepository) GetAllAttendances(c context.Context, userID string, date *time.Time, page int, limit int) ([]*DailyAttendance, int64, error) {
+
+	filter := bson.M{}
+
+	if userID != "" {
+		filter["user_id"] = userID
+	}
+
+	if date != nil {
+		startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+		endOfDay := startOfDay.Add(24 * time.Hour)
+
+		filter["created_at"] = bson.M{
+			"$gte": startOfDay,
+			"$lt":  endOfDay,
+		}
+	}
+
+	totalCount, err := r.collectionDailyAttendance.CountDocuments(c, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	skip := int64((page - 1) * limit)
+
+	opts := options.Find().
+		SetSkip(skip).
+		SetLimit(int64(limit)).
+		SetSort(bson.D{{Key: "created_at", Value: -1}})
+
+	cursor, err := r.collectionDailyAttendance.Find(c, filter, opts)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer cursor.Close(c)
+
+	var dailyAttendances []*DailyAttendance
+	if err := cursor.All(c, &dailyAttendances); err != nil {
+		return nil, 0, err
+	}
+
+	return dailyAttendances, totalCount, nil
+
 }

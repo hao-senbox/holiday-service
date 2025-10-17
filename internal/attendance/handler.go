@@ -3,6 +3,7 @@ package attendance
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"worktime-service/helper"
 	"worktime-service/pkg/constants"
 
@@ -19,8 +20,8 @@ func NewAttendanceHandler(service AttendanceService) *AttendanceHandler {
 	}
 }
 
-func (h *AttendanceHandler)  CheckIn(c *gin.Context) {
-	
+func (h *AttendanceHandler) CheckIn(c *gin.Context) {
+
 	var req CheckInRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -41,7 +42,7 @@ func (h *AttendanceHandler)  CheckIn(c *gin.Context) {
 		helper.SendError(c, 400, fmt.Errorf("token not found"), helper.ErrInvalidRequest)
 		return
 	}
-	
+
 	ctx := context.WithValue(c, constants.TokenKey, token)
 
 	err := h.service.CheckIn(ctx, &req)
@@ -76,7 +77,7 @@ func (h *AttendanceHandler) CheckOut(c *gin.Context) {
 		helper.SendError(c, 400, fmt.Errorf("token not found"), helper.ErrInvalidRequest)
 		return
 	}
-	
+
 	ctx := context.WithValue(c, constants.TokenKey, token)
 
 	err := h.service.CheckOut(ctx, &req)
@@ -94,18 +95,17 @@ func (h *AttendanceHandler) GetMyAttendance(c *gin.Context) {
 	month := c.Query("month")
 	year := c.Query("year")
 	userID := c.Query("user-id")
-	
 
 	token, exists := c.Get(constants.Token)
 	if !exists {
 		helper.SendError(c, 400, fmt.Errorf("token not found"), helper.ErrInvalidRequest)
 		return
 	}
-	
+
 	ctx := context.WithValue(c, constants.TokenKey, token)
 
 	data, err := h.service.GetMyAttendance(ctx, userID, month, year)
-	
+
 	if err != nil {
 		helper.SendError(c, 400, err, helper.ErrInvalidRequest)
 		return
@@ -146,7 +146,7 @@ func (h *AttendanceHandler) AttendanceStudent(c *gin.Context) {
 	}
 
 	helper.SendSuccess(c, 200, "Success", nil)
-	
+
 }
 
 func (h *AttendanceHandler) GetMyAttendanceStudent(c *gin.Context) {
@@ -164,12 +164,48 @@ func (h *AttendanceHandler) GetMyAttendanceStudent(c *gin.Context) {
 	ctx := context.WithValue(c, constants.TokenKey, token)
 
 	data, err := h.service.GetAttendanceStudent(ctx, userID, month, year)
-	
+
 	if err != nil {
 		helper.SendError(c, 400, err, helper.ErrInvalidRequest)
 		return
 	}
 
 	helper.SendSuccess(c, 200, "Success", data)
+
+}
+
+func (h *AttendanceHandler) GetAllAttendances(c *gin.Context) {
+
+	date := c.Query("date")
+	userID := c.Query("user-id")
+	page := c.Query("page")
+	limit := c.Query("limit")
+
+	pageInt, _ := strconv.Atoi(page)
+	limitInt, _ := strconv.Atoi(limit)
+
+	if page == "" {
+		pageInt = 1
+	}
+	if limit == "" {
+		limitInt = 10
+	}
+
+	token, exists := c.Get(constants.Token)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("token not found"), helper.ErrInvalidRequest)
+		return
+	}
+
+	ctx := context.WithValue(c, constants.TokenKey, token)
+
+	data, err := h.service.GetAllAttendances(ctx, userID, date, pageInt, limitInt)
+
+	if err != nil {
+		helper.SendError(c, 400, err, helper.ErrInvalidRequest)
+		return
+	}
+
+	helper.SendSuccess(c, 200, "Get All Attendances", data)
 
 }
