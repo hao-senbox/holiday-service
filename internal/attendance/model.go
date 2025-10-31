@@ -1,21 +1,23 @@
 package attendance
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type AttendanceLog struct {
-	ID        primitive.ObjectID `json:"id" bson:"_id"`
-	UserID    string             `json:"user_id" bson:"user_id"`
-	LogDate   time.Time          `json:"log_date" bson:"log_date"`
-	LogTime   time.Time          `json:"log_time" bson:"log_time"`
-	LogType   string             `json:"log_type" bson:"log_type"`
-	Emotion   string             `json:"emotion" bson:"emotion"`
-	Notes     *string            `json:"notes" bson:"notes"`
-	CreatedBy *string            `json:"created_by" bson:"created_by"`
-	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
-	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
+	ID          primitive.ObjectID `json:"id" bson:"_id"`
+	UserID      string             `json:"user_id" bson:"user_id"`
+	Temperature string             `json:"temperature" bson:"temperature"`
+	LogDate     time.Time          `json:"log_date" bson:"log_date"`
+	LogTime     time.Time          `json:"log_time" bson:"log_time"`
+	LogType     string             `json:"log_type" bson:"log_type"`
+	Emotion     string             `json:"emotion" bson:"emotion"`
+	Notes       *string            `json:"notes" bson:"notes"`
+	CreatedBy   *string            `json:"created_by" bson:"created_by"`
+	CreatedAt   time.Time          `json:"created_at" bson:"created_at"`
+	UpdatedAt   time.Time          `json:"updated_at" bson:"updated_at"`
 }
 
 type DailyAttendance struct {
@@ -38,6 +40,7 @@ type DailyAttendance struct {
 type AttendanceStudent struct {
 	ID           primitive.ObjectID `json:"id" bson:"_id"`
 	UserID       string             `json:"user_id" bson:"user_id"`
+	Temperature  string             `json:"temperature" bson:"temperature"`
 	DayOfWeek    time.Weekday       `json:"day_of_week" bson:"day_of_week"`
 	Date         time.Time          `json:"date" bson:"date"`
 	CheckInTime  *time.Time         `json:"check_in_time" bson:"check_in_time"`

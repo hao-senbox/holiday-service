@@ -14,9 +14,10 @@ type CheckOutRequest struct {
 }
 
 type AttendanceStudentRequest struct {
-	UserID    string `json:"user_id" bson:"user_id"`
-	Types     string `json:"types" bson:"types"`
-	Notes     string `json:"note" bson:"note"`
-	Date      string `json:"date" bson:"date"`
-	CreatedBy string `json:"created_by" bson:"created_by"`
+	UserID      string `json:"user_id" bson:"user_id"`
+	Types       string `json:"types" bson:"types"`
+	Notes       string `json:"note" bson:"note"`
+	Temperature string `json:"temperature" bson:"temperature"`
+	Date        string `json:"date" bson:"date"`
+	CreatedBy   string `json:"created_by" bson:"created_by"`
 }

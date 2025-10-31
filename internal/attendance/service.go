@@ -260,6 +260,10 @@ func (s *attendanceService) AttendanceStudent(c context.Context, req *Attendance
 		return fmt.Errorf("types is required")
 	}
 
+	if req.Temperature == "" {
+		return fmt.Errorf("temperature is required")
+	}
+
 	now := time.Now()
 	today := helper.GetStartOfDay(now)
 
@@ -279,15 +283,16 @@ func (s *attendanceService) AttendanceStudent(c context.Context, req *Attendance
 			}
 		} else {
 			if err := s.repo.CreateAttendanceLog(c, &AttendanceLog{
-				ID:        primitive.NewObjectID(),
-				UserID:    req.UserID,
-				LogDate:   today,
-				LogTime:   now,
-				LogType:   "arrive",
-				Notes:     &req.Notes,
-				CreatedBy: &req.CreatedBy,
-				CreatedAt: now,
-				UpdatedAt: now,
+				ID:          primitive.NewObjectID(),
+				UserID:      req.UserID,
+				Temperature: req.Temperature,
+				LogDate:     today,
+				LogTime:     now,
+				LogType:     "arrive",
+				Notes:       &req.Notes,
+				CreatedBy:   &req.CreatedBy,
+				CreatedAt:   now,
+				UpdatedAt:   now,
 			}); err != nil {
 				return err
 			}
@@ -296,6 +301,7 @@ func (s *attendanceService) AttendanceStudent(c context.Context, req *Attendance
 				ID:          primitive.NewObjectID(),
 				UserID:      req.UserID,
 				DayOfWeek:   today.Weekday(),
+				Temperature: req.Temperature,
 				Date:        today,
 				CheckInTime: &now,
 				Types:       req.Types,
