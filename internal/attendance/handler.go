@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"worktime-service/helper"
+	"worktime-service/internal/shared"
 	"worktime-service/pkg/constants"
 
 	"github.com/gin-gonic/gin"
@@ -207,5 +208,33 @@ func (h *AttendanceHandler) GetAllAttendances(c *gin.Context) {
 	}
 
 	helper.SendSuccess(c, 200, "Get All Attendances", data)
+
+}
+
+func (h *AttendanceHandler) GetStudentTemperatureChart(c *gin.Context) {
+	termID := c.Query("term-id")
+	studentID := c.Query("student-id")
+
+	if termID == "" {
+		helper.SendError(c, 400, fmt.Errorf("term_id is required"), helper.ErrInvalidRequest)
+		return
+	}
+
+	if studentID == "" {
+		helper.SendError(c, 400, fmt.Errorf("student_id is required"), helper.ErrInvalidRequest)
+		return
+	}
+
+	var req shared.GetStudentTemperatureChartRequest
+	req.TermID = termID
+	req.StudentID = studentID
+
+	res, err := h.service.GetStudentTemperatureChart(c.Request.Context(), req)
+	if err != nil {
+		helper.SendError(c, 400, err, helper.ErrInvalidRequest)
+		return
+	}
+
+	helper.SendSuccess(c, 200, "Success", res)
 
 }

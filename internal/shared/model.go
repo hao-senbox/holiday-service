@@ -6,14 +6,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type StudentTemperatureChartResponse struct {
-	Title        string    `json:"title"`
-	Unit         string    `json:"unit"`
-	Labels       []string  `json:"labels"`
-	Temperatures []float64 `json:"temperatures"`
-	Status       []string  `json:"status"`
-}
-
 type AttendanceStudent struct {
 	ID           primitive.ObjectID `json:"id" bson:"_id"`
 	UserID       string             `json:"user_id" bson:"user_id"`

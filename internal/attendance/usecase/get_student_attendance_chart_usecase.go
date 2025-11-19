@@ -20,7 +20,7 @@ var weekdayOrder = []time.Weekday{
 }
 
 type GetStudentTemperatureChartUsecase interface {
-	Execute(c context.Context, userID string) (*shared.StudentTemperatureChartResponse, error)
+	Execute(c context.Context, req shared.GetStudentTemperatureChartRequest) (*shared.StudentTemperatureChartResponse, error)
 }
 
 type getStudentTemperatureChartUsecase struct {
@@ -32,9 +32,9 @@ func NewGetStudentTemperatureChartUsecase(attendanceRepository shared.Attendance
 	return &getStudentTemperatureChartUsecase{attendanceRepository: attendanceRepository, termGateway: termGateway}
 }
 
-func (u *getStudentTemperatureChartUsecase) Execute(c context.Context, userID string) (*shared.StudentTemperatureChartResponse, error) {
+func (u *getStudentTemperatureChartUsecase) Execute(c context.Context, req shared.GetStudentTemperatureChartRequest) (*shared.StudentTemperatureChartResponse, error) {
 
-	term, err := u.termGateway.GetTermByID(c, userID)
+	term, err := u.termGateway.GetTermByID(c, req.TermID)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (u *getStudentTemperatureChartUsecase) Execute(c context.Context, userID st
 	StartDate, _ := time.Parse("2006-01-02", term.StartDate)
 	EndDate, _ := time.Parse("2006-01-02", term.EndDate)
 
-	records, err := u.attendanceRepository.GetStudentAttendanceInDateRange(c, userID, StartDate, EndDate)
+	records, err := u.attendanceRepository.GetStudentAttendanceInDateRange(c, req.StudentID, StartDate, EndDate)
 	if err != nil {
 		return nil, err
 	}

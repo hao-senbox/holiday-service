@@ -21,7 +21,7 @@ type AttendanceService interface {
 	GetMyAttendance(c context.Context, userID string, month string, year string) ([]*DailyAttendance, error)
 	GetAttendanceStudent(c context.Context, userID string, month string, year string) ([]*shared.AttendanceStudent, error)
 	GetAllAttendances(c context.Context, userID string, date string, page int, limit int) (*DailyAttendanceResponsePagination, error)
-	GetStudentTemperatureChart(c context.Context, userID string) (*shared.StudentTemperatureChartResponse, error)
+	GetStudentTemperatureChart(c context.Context, req shared.GetStudentTemperatureChartRequest) (*shared.StudentTemperatureChartResponse, error)
 }
 
 type attendanceService struct {
@@ -503,6 +503,6 @@ func formatTimePtr(t *time.Time) string {
 	return t.Add(7 * time.Hour).Format("2006-01-02 15:04:05")
 }
 
-func (s *attendanceService) GetStudentTemperatureChart(c context.Context, userID string) (*shared.StudentTemperatureChartResponse, error) {
-	return s.getStudentTemperatureChartUsecase.Execute(c, userID)
+func (s *attendanceService) GetStudentTemperatureChart(c context.Context, req shared.GetStudentTemperatureChartRequest) (*shared.StudentTemperatureChartResponse, error) {
+	return s.getStudentTemperatureChartUsecase.Execute(c, req)
 }
