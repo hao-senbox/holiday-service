@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 	"worktime-service/helper"
+	attendance "worktime-service/internal/attendance/usecase"
 	"worktime-service/internal/user"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -19,17 +20,20 @@ type AttendanceService interface {
 	GetMyAttendance(c context.Context, userID string, month string, year string) ([]*DailyAttendance, error)
 	GetAttendanceStudent(c context.Context, userID string, month string, year string) ([]*AttendanceStudent, error)
 	GetAllAttendances(c context.Context, userID string, date string, page int, limit int) (*DailyAttendanceResponsePagination, error)
+	GetStudentTemperatureChart(c context.Context, userID string) (*StudentTemperatureChartResponse, error)
 }
 
 type attendanceService struct {
-	repo        AttendanceRepository
-	userService user.UserService
+	repo                              AttendanceRepository
+	userService                       user.UserService
+	getStudentTemperatureChartUsecase attendance.GetStudentTemperatureChartUsecase
 }
 
-func NewAttendanceService(repo AttendanceRepository, userService user.UserService) AttendanceService {
+func NewAttendanceService(repo AttendanceRepository, userService user.UserService, getStudentTemperatureChartUsecase attendance.GetStudentTemperatureChartUsecase) AttendanceService {
 	return &attendanceService{
-		repo:        repo,
-		userService: userService,
+		repo:                              repo,
+		userService:                       userService,
+		getStudentTemperatureChartUsecase: getStudentTemperatureChartUsecase,
 	}
 }
 
@@ -496,4 +500,8 @@ func formatTimePtr(t *time.Time) string {
 		return ""
 	}
 	return t.Add(7 * time.Hour).Format("2006-01-02 15:04:05")
+}
+
+func (s *attendanceService) GetStudentTemperatureChart(c context.Context, userID string) (*StudentTemperatureChartResponse, error) {
+	return s.getStudentTemperatureChartUsecase.Execute(c, userID)
 }

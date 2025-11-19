@@ -22,6 +22,7 @@ type AttendanceRepository interface {
 	UpdateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *AttendanceStudent) error
 	GetAttendanceStudent(c context.Context, userID string, firstDay time.Time, lastDay time.Time) ([]*AttendanceStudent, error)
 	GetAllAttendances(c context.Context, userID string, date *time.Time, page int, limit int) ([]*DailyAttendance, int64, error)
+	GetStudentAttendanceInDateRange(c context.Context, studentID string, startDate time.Time, endDate time.Time) ([]*AttendanceStudent, error)
 }
 
 type attendanceRepository struct {
@@ -179,7 +180,7 @@ func (r *attendanceRepository) GetAttendanceStudent(c context.Context, userID st
 		"user_id": userID,
 		"date": bson.M{
 			"$gte": firstDay,
-			"$lte":  lastDay,
+			"$lte": lastDay,
 		},
 	}
 
@@ -247,4 +248,30 @@ func (r *attendanceRepository) GetAllAttendances(c context.Context, userID strin
 
 	return dailyAttendances, totalCount, nil
 
+}
+
+func (r *attendanceRepository) GetStudentAttendanceInDateRange(c context.Context, studentID string, startDate time.Time, endDate time.Time) ([]*AttendanceStudent, error) {
+
+	var attendanceStudents []*AttendanceStudent
+
+	filter := bson.M{
+		"user_id": studentID,
+		"date": bson.M{
+			"$gte": startDate,
+			"$lte": endDate,
+		},
+	}
+
+	cursor, err := r.collectionDailyAttendanceStudent.Find(c, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(c)
+
+	err = cursor.All(c, &attendanceStudents)
+	if err != nil {
+		return nil, err
+	}
+
+	return attendanceStudents, nil
 }
