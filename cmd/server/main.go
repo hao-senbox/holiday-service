@@ -9,6 +9,8 @@ import (
 	"time"
 	"worktime-service/config"
 	"worktime-service/internal/attendance"
+	"worktime-service/internal/attendance/usecase"
+	"worktime-service/internal/gateway"
 	"worktime-service/internal/leave"
 	"worktime-service/internal/user"
 	"worktime-service/pkg/consul"
@@ -44,6 +46,8 @@ func main() {
 	consulClient := consulConn.Connect()
 	defer consulConn.Deregister()
 
+	termGateway := gateway.NewUserGateway("term-service", consulClient)
+
 	mongoClient, err := connectToMongoDB(cfg.MongoURI)
 	if err != nil {
 		panic(err)
@@ -75,7 +79,8 @@ func main() {
 	attendanceDailyStudentCollection := mongoClient.Database(cfg.MongoDB).Collection("attendances_daily_students")
 	userService := user.NewUserService(consulClient)
 	attendanceRepository := attendance.NewAttendanceRepository(attendanceCollection, attendanceDailyCollection, attendanceDailyStudentCollection)
-	attendanceService := attendance.NewAttendanceService(attendanceRepository, userService)
+	getStudentTemperatureChartUsecase := usecase.NewGetStudentTemperatureChartUsecase(attendanceRepository, termGateway)
+	attendanceService := attendance.NewAttendanceService(attendanceRepository, userService, getStudentTemperatureChartUsecase)
 	attendanceHandler := attendance.NewAttendanceHandler(attendanceService)
 
 	leaveRepository := leave.NewLeaveRepository(leaveRequestCollection, settingCollection, dailyLeaveSlotsCollection, leaveBalanceCollection)

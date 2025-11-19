@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 	"worktime-service/helper"
+	"worktime-service/internal/shared"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -17,12 +18,12 @@ type AttendanceRepository interface {
 	existingDailyAttendance(c context.Context, userID string, today time.Time) (*DailyAttendance, error)
 	UpdatedDailyAttendance(c context.Context, userID string, today time.Time, dailyAttendance *DailyAttendance) error
 	GetMyAttendance(c context.Context, userID string, firstDay time.Time, lastDay time.Time) ([]*DailyAttendance, error)
-	existingDailyAttendanceStudent(c context.Context, userID string, today time.Time) (*AttendanceStudent, error)
-	CreateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *AttendanceStudent) error
-	UpdateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *AttendanceStudent) error
-	GetAttendanceStudent(c context.Context, userID string, firstDay time.Time, lastDay time.Time) ([]*AttendanceStudent, error)
+	existingDailyAttendanceStudent(c context.Context, userID string, today time.Time) (*shared.AttendanceStudent, error)
+	CreateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *shared.AttendanceStudent) error
+	UpdateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *shared.AttendanceStudent) error
+	GetAttendanceStudent(c context.Context, userID string, firstDay time.Time, lastDay time.Time) ([]*shared.AttendanceStudent, error)
 	GetAllAttendances(c context.Context, userID string, date *time.Time, page int, limit int) ([]*DailyAttendance, int64, error)
-	GetStudentAttendanceInDateRange(c context.Context, studentID string, startDate time.Time, endDate time.Time) ([]*AttendanceStudent, error)
+	GetStudentAttendanceInDateRange(c context.Context, studentID string, startDate time.Time, endDate time.Time) ([]*shared.AttendanceStudent, error)
 }
 
 type attendanceRepository struct {
@@ -137,10 +138,7 @@ func (r *attendanceRepository) GetMyAttendance(c context.Context, userID string,
 
 }
 
-func (r *attendanceRepository) existingDailyAttendanceStudent(c context.Context, userID string, today time.Time) (*AttendanceStudent, error) {
-
-	var existingDailyAttendanceStudent AttendanceStudent
-
+func (r *attendanceRepository) existingDailyAttendanceStudent(c context.Context, userID string, today time.Time) (*shared.AttendanceStudent, error) {
 	startOfDay := today
 	endOfDay := helper.GetEndOfDay(startOfDay)
 
@@ -152,6 +150,7 @@ func (r *attendanceRepository) existingDailyAttendanceStudent(c context.Context,
 		},
 	}
 
+	var existingDailyAttendanceStudent shared.AttendanceStudent
 	err := r.collectionDailyAttendanceStudent.FindOne(c, filter).Decode(&existingDailyAttendanceStudent)
 
 	if mongo.ErrNoDocuments == err {
@@ -162,19 +161,19 @@ func (r *attendanceRepository) existingDailyAttendanceStudent(c context.Context,
 
 }
 
-func (r *attendanceRepository) CreateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *AttendanceStudent) error {
+func (r *attendanceRepository) CreateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *shared.AttendanceStudent) error {
 	_, err := r.collectionDailyAttendanceStudent.InsertOne(c, dailyAttendanceStudent)
 	return err
 }
 
-func (r *attendanceRepository) UpdateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *AttendanceStudent) error {
+func (r *attendanceRepository) UpdateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *shared.AttendanceStudent) error {
 	_, err := r.collectionDailyAttendanceStudent.UpdateOne(c, bson.M{"_id": dailyAttendanceStudent.ID}, bson.M{"$set": dailyAttendanceStudent})
 	return err
 }
 
-func (r *attendanceRepository) GetAttendanceStudent(c context.Context, userID string, firstDay time.Time, lastDay time.Time) ([]*AttendanceStudent, error) {
+func (r *attendanceRepository) GetAttendanceStudent(c context.Context, userID string, firstDay time.Time, lastDay time.Time) ([]*shared.AttendanceStudent, error) {
 
-	var dailyAttendances []*AttendanceStudent
+	var dailyAttendances []*shared.AttendanceStudent
 
 	filter := bson.M{
 		"user_id": userID,
@@ -250,9 +249,9 @@ func (r *attendanceRepository) GetAllAttendances(c context.Context, userID strin
 
 }
 
-func (r *attendanceRepository) GetStudentAttendanceInDateRange(c context.Context, studentID string, startDate time.Time, endDate time.Time) ([]*AttendanceStudent, error) {
+func (r *attendanceRepository) GetStudentAttendanceInDateRange(c context.Context, studentID string, startDate time.Time, endDate time.Time) ([]*shared.AttendanceStudent, error) {
 
-	var attendanceStudents []*AttendanceStudent
+	var attendanceStudents []*shared.AttendanceStudent
 
 	filter := bson.M{
 		"user_id": studentID,

@@ -8,6 +8,7 @@ import (
 	"time"
 	"worktime-service/helper"
 	attendance "worktime-service/internal/attendance/usecase"
+	"worktime-service/internal/shared"
 	"worktime-service/internal/user"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -18,9 +19,9 @@ type AttendanceService interface {
 	CheckOut(c context.Context, req *CheckOutRequest) error
 	AttendanceStudent(c context.Context, req *AttendanceStudentRequest) error
 	GetMyAttendance(c context.Context, userID string, month string, year string) ([]*DailyAttendance, error)
-	GetAttendanceStudent(c context.Context, userID string, month string, year string) ([]*AttendanceStudent, error)
+	GetAttendanceStudent(c context.Context, userID string, month string, year string) ([]*shared.AttendanceStudent, error)
 	GetAllAttendances(c context.Context, userID string, date string, page int, limit int) (*DailyAttendanceResponsePagination, error)
-	GetStudentTemperatureChart(c context.Context, userID string) (*StudentTemperatureChartResponse, error)
+	GetStudentTemperatureChart(c context.Context, userID string) (*shared.StudentTemperatureChartResponse, error)
 }
 
 type attendanceService struct {
@@ -301,7 +302,7 @@ func (s *attendanceService) AttendanceStudent(c context.Context, req *Attendance
 				return err
 			}
 
-			if err := s.repo.CreateDailyAttendanceStudent(c, &AttendanceStudent{
+			if err := s.repo.CreateDailyAttendanceStudent(c, &shared.AttendanceStudent{
 				ID:          primitive.NewObjectID(),
 				UserID:      req.UserID,
 				DayOfWeek:   today.Weekday(),
@@ -377,7 +378,7 @@ func (s *attendanceService) AttendanceStudent(c context.Context, req *Attendance
 			return err
 		}
 
-		if err := s.repo.CreateDailyAttendanceStudent(c, &AttendanceStudent{
+		if err := s.repo.CreateDailyAttendanceStudent(c, &shared.AttendanceStudent{
 			ID:           primitive.NewObjectID(),
 			UserID:       req.UserID,
 			DayOfWeek:    dateParse.Weekday(),
@@ -400,7 +401,7 @@ func (s *attendanceService) AttendanceStudent(c context.Context, req *Attendance
 	return nil
 }
 
-func (s *attendanceService) GetAttendanceStudent(c context.Context, userID string, month string, year string) ([]*AttendanceStudent, error) {
+func (s *attendanceService) GetAttendanceStudent(c context.Context, userID string, month string, year string) ([]*shared.AttendanceStudent, error) {
 
 	monthInt, err := strconv.Atoi(month)
 	if err != nil {
@@ -502,6 +503,6 @@ func formatTimePtr(t *time.Time) string {
 	return t.Add(7 * time.Hour).Format("2006-01-02 15:04:05")
 }
 
-func (s *attendanceService) GetStudentTemperatureChart(c context.Context, userID string) (*StudentTemperatureChartResponse, error) {
+func (s *attendanceService) GetStudentTemperatureChart(c context.Context, userID string) (*shared.StudentTemperatureChartResponse, error) {
 	return s.getStudentTemperatureChartUsecase.Execute(c, userID)
 }
