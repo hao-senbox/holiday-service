@@ -271,9 +271,9 @@ func (s *attendanceService) AttendanceStudent(c context.Context, req *Attendance
 	case "arrive":
 		result, _ := s.repo.existingDailyAttendanceStudent(c, req.UserID, today)
 		if result != nil {
-			if result.CheckInTime != nil {
-				return fmt.Errorf("student has already checked in today")
-			}
+			// if result.CheckInTime != nil {
+			// 	return fmt.Errorf("student has already checked in today")
+			// }
 
 			result.CheckInTime = &now
 			result.UpdatedAt = now
@@ -316,17 +316,17 @@ func (s *attendanceService) AttendanceStudent(c context.Context, req *Attendance
 
 	case "leave":
 		result, _ := s.repo.existingDailyAttendanceStudent(c, req.UserID, today)
-		if result == nil {
-			return fmt.Errorf("student has not checked in today")
-		}
+		// if result == nil {
+		// 	return fmt.Errorf("student has not checked in today")
+		// }
 
-		if result.CheckOutTime != nil {
-			return fmt.Errorf("student has already checked out today")
-		}
+		// if result.CheckOutTime != nil {
+		// 	return fmt.Errorf("student has already checked out today")
+		// }
 
-		if result.CheckInTime == nil {
-			return fmt.Errorf("student has not checked in today")
-		}
+		// if result.CheckInTime == nil {
+		// 	return fmt.Errorf("student has not checked in today")
+		// }
 
 		if err := s.repo.CreateAttendanceLog(c, &AttendanceLog{
 			ID:        primitive.NewObjectID(),
