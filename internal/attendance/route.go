@@ -8,6 +8,15 @@ import (
 
 func RegisterRoutes(r *gin.Engine, handler *AttendanceHandler) {
 
+	adminGroup := r.Group("/api/v1/admin")
+	adminGroup.Use(middleware.Secured())
+	{
+		attendanceGroup := adminGroup.Group("/attendance")
+		{
+			attendanceGroup.GET("/student-temperature-chart", handler.GetStudentTemperatureChart)
+		}
+	}
+
 	attendanceGroup := r.Group("/api/v1/attendance").Use(middleware.Secured())
 	{
 		attendanceGroup.POST("/checkin", handler.CheckIn)
