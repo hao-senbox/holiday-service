@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"worktime-service/internal/gateway"
@@ -50,9 +49,8 @@ func (u *getStudentTemperatureChartUsecase) Execute(c context.Context, req share
 	tempByWeekday := make(map[time.Weekday]float64)
 
 	for _, r := range records {
-		if r.Temperature != "" {
-			val, _ := strconv.ParseFloat(r.Temperature, 64)
-			tempByWeekday[r.DayOfWeek] = val
+		if r.Temperature != 0 {
+			tempByWeekday[r.DayOfWeek] = r.Temperature
 		}
 	}
 

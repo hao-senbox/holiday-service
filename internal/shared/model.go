@@ -9,7 +9,7 @@ import (
 type AttendanceStudent struct {
 	ID           primitive.ObjectID `json:"id" bson:"_id"`
 	UserID       string             `json:"user_id" bson:"user_id"`
-	Temperature  string             `json:"temperature" bson:"temperature"`
+	Temperature  float64             `json:"temperature" bson:"temperature"`
 	DayOfWeek    time.Weekday       `json:"day_of_week" bson:"day_of_week"`
 	Date         time.Time          `json:"date" bson:"date"`
 	CheckInTime  *time.Time         `json:"check_in_time" bson:"check_in_time"`

@@ -229,7 +229,15 @@ func (h *AttendanceHandler) GetStudentTemperatureChart(c *gin.Context) {
 	req.TermID = termID
 	req.StudentID = studentID
 
-	res, err := h.service.GetStudentTemperatureChart(c.Request.Context(), req)
+	token, exists := c.Get(constants.Token)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("token not found"), helper.ErrInvalidRequest)
+		return
+	}
+
+	ctx := context.WithValue(c, constants.TokenKey, token)
+
+	res, err := h.service.GetStudentTemperatureChart(ctx, req)
 	if err != nil {
 		helper.SendError(c, 400, err, helper.ErrInvalidRequest)
 		return

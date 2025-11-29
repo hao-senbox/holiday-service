@@ -265,15 +265,14 @@ func (s *attendanceService) AttendanceStudent(c context.Context, req *Attendance
 		return fmt.Errorf("types is required")
 	}
 
-	if req.Temperature == "" {
-		return fmt.Errorf("temperature is required")
-	}
-
 	now := time.Now()
 	today := helper.GetStartOfDay(now)
 
 	switch req.Types {
 	case "arrive":
+		if req.Temperature == 0 {
+			return fmt.Errorf("temperature is required")
+		}
 		result, _ := s.repo.existingDailyAttendanceStudent(c, req.UserID, today)
 		if result != nil {
 			// if result.CheckInTime != nil {
@@ -282,6 +281,7 @@ func (s *attendanceService) AttendanceStudent(c context.Context, req *Attendance
 
 			result.CheckInTime = &now
 			result.UpdatedAt = now
+			result.Temperature = req.Temperature
 
 			if err := s.repo.UpdateDailyAttendanceStudent(c, result); err != nil {
 				return err
@@ -332,26 +332,56 @@ func (s *attendanceService) AttendanceStudent(c context.Context, req *Attendance
 		// if result.CheckInTime == nil {
 		// 	return fmt.Errorf("student has not checked in today")
 		// }
+		if result == nil {
+			if err := s.repo.CreateDailyAttendanceStudent(c, &shared.AttendanceStudent{
+				ID:           primitive.NewObjectID(),
+				UserID:       req.UserID,
+				DayOfWeek:    today.Weekday(),
+				Date:         today,
+				CheckOutTime: &now,
+				Types:        req.Types,
+				Note:         req.Notes,
+				CreatedBy:    req.CreatedBy,
+				CreatedAt:    now,
+				UpdatedAt:    now,
+			}); err != nil {
+				return err
+			}
 
-		if err := s.repo.CreateAttendanceLog(c, &AttendanceLog{
-			ID:        primitive.NewObjectID(),
-			UserID:    req.UserID,
-			LogDate:   today,
-			LogTime:   now,
-			LogType:   "leave",
-			Notes:     &req.Notes,
-			CreatedBy: &req.CreatedBy,
-			CreatedAt: now,
-			UpdatedAt: now,
-		}); err != nil {
-			return err
-		}
+			if err := s.repo.CreateAttendanceLog(c, &AttendanceLog{
+				ID:        primitive.NewObjectID(),
+				UserID:    req.UserID,
+				LogDate:   today,
+				LogTime:   now,
+				LogType:   "leave",
+				Notes:     &req.Notes,
+				CreatedBy: &req.CreatedBy,
+				CreatedAt: now,
+				UpdatedAt: now,
+			}); err != nil {
+				return err
+			}
+		} else {
+			if err := s.repo.CreateAttendanceLog(c, &AttendanceLog{
+				ID:        primitive.NewObjectID(),
+				UserID:    req.UserID,
+				LogDate:   today,
+				LogTime:   now,
+				LogType:   "leave",
+				Notes:     &req.Notes,
+				CreatedBy: &req.CreatedBy,
+				CreatedAt: now,
+				UpdatedAt: now,
+			}); err != nil {
+				return err
+			}
 
-		result.CheckOutTime = &now
-		result.UpdatedAt = now
+			result.CheckOutTime = &now
+			result.UpdatedAt = now
 
-		if err := s.repo.UpdateDailyAttendanceStudent(c, result); err != nil {
-			return err
+			if err := s.repo.UpdateDailyAttendanceStudent(c, result); err != nil {
+				return err
+			}
 		}
 
 	case "absent":

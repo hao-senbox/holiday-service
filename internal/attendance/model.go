@@ -9,7 +9,7 @@ import (
 type AttendanceLog struct {
 	ID          primitive.ObjectID `json:"id" bson:"_id"`
 	UserID      string             `json:"user_id" bson:"user_id"`
-	Temperature string             `json:"temperature" bson:"temperature"`
+	Temperature float64             `json:"temperature" bson:"temperature"`
 	LogDate     time.Time          `json:"log_date" bson:"log_date"`
 	LogTime     time.Time          `json:"log_time" bson:"log_time"`
 	LogType     string             `json:"log_type" bson:"log_type"`
