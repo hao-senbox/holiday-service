@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Worktime Service",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/server",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "configs/config.yaml"
+            ],
+            "env": {},
+            "showLog": true,
+            "trace": "log"
+        }
+    ]
+}

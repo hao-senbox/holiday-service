@@ -1,6 +1,6 @@
 package shared
 
 type GetStudentTemperatureChartRequest struct {
-	TermID    string `json:"term_id" bson:"term_id"`
+	OrgID     string `json:"org_id" bson:"org_id"`
 	StudentID string `json:"student_id" bson:"student_id"`
 }

@@ -212,10 +212,10 @@ func (h *AttendanceHandler) GetAllAttendances(c *gin.Context) {
 }
 
 func (h *AttendanceHandler) GetStudentTemperatureChart(c *gin.Context) {
-	termID := c.Query("term-id")
+	orgID := c.Query("org-id")
 	studentID := c.Query("student-id")
 
-	if termID == "" {
+	if orgID == "" {
 		helper.SendError(c, 400, fmt.Errorf("term_id is required"), helper.ErrInvalidRequest)
 		return
 	}
@@ -226,7 +226,7 @@ func (h *AttendanceHandler) GetStudentTemperatureChart(c *gin.Context) {
 	}
 
 	var req shared.GetStudentTemperatureChartRequest
-	req.TermID = termID
+	req.OrgID = orgID
 	req.StudentID = studentID
 
 	token, exists := c.Get(constants.Token)

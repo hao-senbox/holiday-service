@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"context"
+	"fmt"
+	"sort"
 	"time"
 
 	"worktime-service/internal/gateway"
@@ -19,7 +21,7 @@ var weekdayOrder = []time.Weekday{
 }
 
 type GetStudentTemperatureChartUsecase interface {
-	Execute(c context.Context, req shared.GetStudentTemperatureChartRequest) (*shared.StudentTemperatureChartResponse, error)
+	Execute(c context.Context, req shared.GetStudentTemperatureChartRequest) ([]*shared.StudentTemperatureChartResponse, error)
 }
 
 type getStudentTemperatureChartUsecase struct {
@@ -31,9 +33,9 @@ func NewGetStudentTemperatureChartUsecase(attendanceRepository shared.Attendance
 	return &getStudentTemperatureChartUsecase{attendanceRepository: attendanceRepository, termGateway: termGateway}
 }
 
-func (u *getStudentTemperatureChartUsecase) Execute(c context.Context, req shared.GetStudentTemperatureChartRequest) (*shared.StudentTemperatureChartResponse, error) {
+func (u *getStudentTemperatureChartUsecase) Execute(c context.Context, req shared.GetStudentTemperatureChartRequest) ([]*shared.StudentTemperatureChartResponse, error) {
 
-	term, err := u.termGateway.GetTermByID(c, req.TermID)
+	term, err := u.termGateway.GetCurrentTermByOrgID(c, req.OrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -46,46 +48,68 @@ func (u *getStudentTemperatureChartUsecase) Execute(c context.Context, req share
 		return nil, err
 	}
 
-	tempByWeekday := make(map[time.Weekday]float64)
-
+	// Group records by year-week
+	recordsByWeek := make(map[string][]*shared.AttendanceStudent)
 	for _, r := range records {
 		if r.Temperature != 0 {
+			year, week := r.Date.ISOWeek()
+			weekStr := fmt.Sprintf("%d-%02d", year, week)
+			recordsByWeek[weekStr] = append(recordsByWeek[weekStr], r)
+		}
+	}
+
+	var responses []*shared.StudentTemperatureChartResponse
+
+	// Get sorted week keys
+	var weekKeys []string
+	for weekKey := range recordsByWeek {
+		weekKeys = append(weekKeys, weekKey)
+	}
+	sort.Strings(weekKeys)
+
+	// Create chart for each week in order
+	for _, weekKey := range weekKeys {
+		tempByWeekday := make(map[time.Weekday]float64)
+
+		for _, r := range recordsByWeek[weekKey] {
 			tempByWeekday[r.DayOfWeek] = r.Temperature
 		}
-	}
 
-	labels := []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
-	temperatures := make([]float64, len(weekdayOrder))
-	status := make([]string, len(weekdayOrder))
+		labels := []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+		temperatures := make([]float64, len(weekdayOrder))
 
-	for i, day := range weekdayOrder {
-		if val, exists := tempByWeekday[day]; exists {
-			temperatures[i] = val
-			status[i] = evaluateStatus(val)
-		} else {
-			temperatures[i] = 0
-			status[i] = "no_data"
+		for i, day := range weekdayOrder {
+			if val, exists := tempByWeekday[day]; exists {
+				temperatures[i] = val
+			} else {
+				temperatures[i] = 0
+			}
 		}
+
+		// Find week date range for title
+		var weekStart, weekEnd time.Time
+		for _, r := range recordsByWeek[weekKey] {
+			if weekStart.IsZero() || r.Date.Before(weekStart) {
+				weekStart = r.Date
+			}
+			if weekEnd.IsZero() || r.Date.After(weekEnd) {
+				weekEnd = r.Date
+			}
+		}
+
+		title := fmt.Sprintf("Week %s",
+			weekKey[len(weekKey)-2:],
+		)
+
+		response := &shared.StudentTemperatureChartResponse{
+			Title:        title,
+			Unit:         "°C",
+			Labels:       labels,
+			Temperatures: temperatures,
+		}
+
+		responses = append(responses, response)
 	}
 
-	response := &shared.StudentTemperatureChartResponse{
-		Title:        "Student Temperature",
-		Unit:         "°C",
-		Labels:       labels,
-		Temperatures: temperatures,
-		Status:       status,
-	}
-
-	return response, nil
-}
-
-func evaluateStatus(value float64) string {
-	switch {
-	case value >= 40:
-		return "danger"
-	case value >= 36.3 && value <= 37.1:
-		return "normal"
-	default:
-		return "warning"
-	}
+	return responses, nil
 }
