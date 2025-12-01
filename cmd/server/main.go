@@ -79,7 +79,7 @@ func main() {
 	attendanceDailyStudentCollection := mongoClient.Database(cfg.MongoDB).Collection("attendances_daily_students")
 	userService := user.NewUserService(consulClient)
 	attendanceRepository := attendance.NewAttendanceRepository(attendanceCollection, attendanceDailyCollection, attendanceDailyStudentCollection)
-	getStudentTemperatureChartUsecase := usecase.NewGetStudentTemperatureChartUsecase(attendanceRepository, termGateway)
+	getStudentTemperatureChartUsecase := usecase.NewGetStudentTemperatureChartUsecase(attendanceRepository, userService, termGateway)
 	attendanceService := attendance.NewAttendanceService(attendanceRepository, userService, getStudentTemperatureChartUsecase)
 	attendanceHandler := attendance.NewAttendanceHandler(attendanceService)
 
