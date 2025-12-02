@@ -211,6 +211,30 @@ func (h *AttendanceHandler) GetAllAttendances(c *gin.Context) {
 
 }
 
+func (h *AttendanceHandler) GetStudentTemperature(c *gin.Context) {
+	studentID := c.Query("student-id")
+	if studentID == "" {
+		helper.SendError(c, 400, fmt.Errorf("student_id is required"), helper.ErrInvalidRequest)
+		return
+	}
+	
+	token, exists := c.Get(constants.Token)
+	if !exists {
+		helper.SendError(c, 400, fmt.Errorf("token not found"), helper.ErrInvalidRequest)
+		return
+	}
+
+	ctx := context.WithValue(c, constants.TokenKey, token)
+
+	res, err := h.service.GetStudentTemperature(ctx, studentID)
+	if err != nil {
+		helper.SendError(c, 400, err, helper.ErrInvalidRequest)
+		return
+	}
+
+	helper.SendSuccess(c, 200, "Success", res)
+}
+
 func (h *AttendanceHandler) GetStudentTemperatureChart(c *gin.Context) {
 	studentID := c.Query("student-id")
 	if studentID == "" {

@@ -2,13 +2,13 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"worktime-service/internal/gateway"
 	"worktime-service/internal/shared"
 	"worktime-service/internal/user"
 )
+
 type GetStudentTemperatureChartUsecase interface {
 	Execute(c context.Context, req shared.GetStudentTemperatureChartRequest) ([]*shared.StudentTemperatureChartResponse, error)
 }
@@ -28,7 +28,7 @@ func (u *getStudentTemperatureChartUsecase) Execute(c context.Context, req share
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("organization_id: %s", user.OrganizationAdmin.ID)
+
 	term, err := u.termGateway.GetCurrentTermByOrgID(c, user.OrganizationAdmin.ID)
 	if err != nil {
 		return nil, err

@@ -23,6 +23,7 @@ type AttendanceRepository interface {
 	UpdateDailyAttendanceStudent(c context.Context, dailyAttendanceStudent *shared.AttendanceStudent) error
 	GetAttendanceStudent(c context.Context, userID string, firstDay time.Time, lastDay time.Time) ([]*shared.AttendanceStudent, error)
 	GetAllAttendances(c context.Context, userID string, date *time.Time, page int, limit int) ([]*DailyAttendance, int64, error)
+	GetStudentTemperature(c context.Context, studentID string) ([]*shared.AttendanceStudent, error)
 	GetStudentAttendanceInDateRange(c context.Context, studentID string, startDate time.Time, endDate time.Time) ([]*shared.AttendanceStudent, error)
 }
 
@@ -247,6 +248,28 @@ func (r *attendanceRepository) GetAllAttendances(c context.Context, userID strin
 
 	return dailyAttendances, totalCount, nil
 
+}
+
+func (r *attendanceRepository) GetStudentTemperature(c context.Context, studentID string) ([]*shared.AttendanceStudent, error) {
+
+	var attendanceStudents []*shared.AttendanceStudent
+
+	filter := bson.M{
+		"user_id": studentID,
+	}
+
+	cursor, err := r.collectionDailyAttendanceStudent.Find(c, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(c)
+
+	err = cursor.All(c, &attendanceStudents)
+	if err != nil {
+		return nil, err
+	}
+
+	return attendanceStudents, nil
 }
 
 func (r *attendanceRepository) GetStudentAttendanceInDateRange(c context.Context, studentID string, startDate time.Time, endDate time.Time) ([]*shared.AttendanceStudent, error) {

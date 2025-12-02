@@ -9,6 +9,12 @@ import (
 func RegisterRoutes(r *gin.Engine, handler *AttendanceHandler) {
 
 	adminGroup := r.Group("/api/v1/admin")
+	gatewayGroup := r.Group("/api/v1/gateway")
+	gatewayGroup.Use(middleware.Secured())
+	{
+		gatewayGroup.GET("/student-temperature", handler.GetStudentTemperature)
+	}
+	
 	adminGroup.Use(middleware.Secured())
 	{
 		attendanceGroup := adminGroup.Group("/attendance")
@@ -26,4 +32,6 @@ func RegisterRoutes(r *gin.Engine, handler *AttendanceHandler) {
 		attendanceGroup.POST("/student", handler.AttendanceStudent)
 		attendanceGroup.GET("/student", handler.GetMyAttendanceStudent)
 	}
+
+	
 }
